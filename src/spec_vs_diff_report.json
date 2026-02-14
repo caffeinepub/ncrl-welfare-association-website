@@ -1,0 +1,44 @@
+{
+  "kind": "spec_vs_diff_report",
+  "version": "1.0",
+  "generatedAt": "2026-02-14T17:43:04.528Z",
+  "summary": "Diff adds a backend migration that seeds placeholder gallery items when the stored gallery map is empty and updates nextGalleryItemId, and updates AdminPage with Principal ID copy-to-clipboard logic. However, there is no clear backend bootstrap path for restoring admin access, and seeding on fresh install (not just upgrade/migration) is not evidenced.",
+  "missing_requirements": [
+    {
+      "id": "REQ-1",
+      "requirement": "Automatically seed the Gallery with placeholder items on deploy/upgrade when the gallery is empty (idempotent; removable via existing admin delete).",
+      "reason": "Seeding logic is only evidenced inside `backend/migration.mo` (upgrade migration). The diff does not show any initialization/install-time seeding path in `backend/main.mo` for a fresh deployment where no migration runs.",
+      "evidence": [
+        "backend/migration.mo",
+        "backend/main.mo"
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "requirement": "Provide a deterministic backend-side mechanism to bootstrap/restore admin privileges when no working admin is available.",
+      "reason": "No new backend method/rule for bootstrapping or assigning admin privileges is shown. The only backend change evidenced is wiring in `Migration.run` and the migration seeding logic; nothing indicates a documented callable bootstrap method or one-time initialization rule for admins.",
+      "evidence": [
+        "backend/main.mo",
+        "backend/migration.mo"
+      ]
+    }
+  ],
+  "hallucinated_features": [
+    {
+      "description": "Admin user profile setup flow (creating/saving a caller profile with UI and toasts).",
+      "reason": "REQ-3 only requests exposing the logged-in Principal ID in an access denied/admin UI to enable permission granting. The diff shows additional UI logic for profile creation (`getCallerUserProfile` / `saveCallerUserProfile` usage and profile setup state) that is not requested by the BuildRequest.",
+      "evidence": [
+        "frontend/src/pages/AdminPage.tsx",
+        "backend/main.mo"
+      ]
+    }
+  ],
+  "confidence": 0.66,
+  "changed_files": [
+    "backend/main.mo",
+    "backend/migration.mo",
+    "frontend-file-summaries.txt",
+    "frontend/src/pages/AdminPage.tsx",
+    "project_state.json"
+  ]
+}

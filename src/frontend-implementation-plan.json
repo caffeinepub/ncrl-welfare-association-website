@@ -1,0 +1,23 @@
+{
+  "kind": "implementation_plan",
+  "version": "1.0",
+  "title": "Show Principal ID on Admin Access Denied screen",
+  "requirements": [
+    {
+      "id": "REQ-3",
+      "summary": "Expose the logged-in user's Internet Identity Principal ID in the Admin Access Denied UI with a copy action so an existing admin can grant access.",
+      "acceptanceCriteria": [
+        "When a logged-in user is not an admin, the Access Denied UI displays their Principal ID in a copyable format (e.g., a monospace text field with a Copy button).",
+        "All user-facing text for this feature is in English.",
+        "No changes are made to immutable frontend paths listed in SYSTEM_CONTEXT."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/pages/AdminPage.tsx",
+          "operation": "modify",
+          "description": "Update the non-admin \"Access Denied\" card to display the currently logged-in user's Principal ID (derived from the existing Internet Identity `identity`) and provide a Copy button. Use shadcn-ui components (e.g., Input + Button) to render a read-only, monospace Principal field and a copy action via the Clipboard API with English success/failure feedback (e.g., toast). Verify the component's usage instructions before implementing."
+        }
+      ]
+    }
+  ]
+}

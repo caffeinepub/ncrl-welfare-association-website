@@ -1,2 +1,3 @@
-# ncrl-welfare-association-website
-Exported from Caffeine project: Seed gallery with temporary placeholder images and unblock admin access
+## 
+
+To run app build and run docker image: `docker build -t app . docker run -it --network host app`
