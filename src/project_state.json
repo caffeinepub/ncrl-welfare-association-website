@@ -1,20 +1,20 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Project involves a gallery that currently has no stored images; user wants temporary/placeholder images added now and later removable via admin access.",
+  "summary": "Website project with editable content (e.g., About Us/Bylaws, gallery) and a need for a way to upload images and manage Notices and Events without direct admin dashboard access.",
   "architectural_notes": [
-    "Gallery displays 'No images available' when there are zero images stored (in the canister/storage)."
+    "Users without the original creator identity cannot access the admin dashboard; site updates/content management may need an alternative workflow or delegated admin access."
   ],
   "known_issues": [
-    "Admin dashboard access error: 'Access Denied' / insufficient permissions prevents user from managing gallery images."
+    "User receives 'Access Denied' when trying to access the admin dashboard with their Internet Identity principal (not an admin identity)."
   ],
   "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-unblock-admin-access-management-by-exposing-the-logged-in-internet-identity-principal-id-in-the-admin-access-denied-screen-and-or-admin-page-header-so-an-existing-administrator-can-grant-permissions-for-that-principal",
-      "title": "Unblock admin access management by exposing the logged-in Internet Identity Principal ID in the Admin Access Denied screen and/or Admin page header so an existing administrator can grant permissions for that Principal.",
+      "id": "feature-add-an-image-file-upload-option-in-the-admin-dashboard-gallery-management-ui-so-admins-can-choose-a-local-image-file-and-have-it-saved-as-the-gallery-item-image-store-the-image-in-the-existing-imageurl-field-using-a-data-url-string-with-basic-client-side-validation-and-clear-english-error-messages",
+      "title": "Add an image file upload option in the Admin Dashboard Gallery management UI so admins can choose a local image file and have it saved as the gallery item image (store the image in the existing `imageUrl` field using a Data URL string, with basic client-side validation and clear English error messages).",
       "reqIds": [
-        "REQ-3"
+        "REQ-2"
       ],
       "version": 1
     }
@@ -22,36 +22,32 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Seed the gallery with temporary random/placeholder images that can be deleted later via admin privileges.",
+      "summary": "Provide a way to upload/manage images for the site (e.g., gallery)",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-2",
-      "summary": "Automatically seed the Gallery with a small set of temporary placeholder images when the canister is deployed/upgraded and the gallery is currently empty, so the public Gallery page no longer shows an empty state. The seeded items must be removable later via the existing admin delete functionality.",
-      "reqIds": [
-        "REQ-1"
-      ],
+      "summary": "Add/update a Notices section with ability to post and manage notices",
+      "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-3",
-      "summary": "Fix data persistence for Gallery items so that gallery content (including the placeholder seed items and any future uploads) is retained across canister upgrades.",
-      "reqIds": [
-        "REQ-2"
-      ],
+      "summary": "Add/update an Events section with ability to post and manage events",
+      "reqIds": [],
       "status": "pending"
     },
     {
-      "id": "AR-5",
-      "summary": "Provide a clear backend-side path to restore/assign admin privileges for a Principal when no working admin is available (to resolve the current “Access Denied” dead-end).",
+      "id": "AR-4",
+      "summary": "Grant admin permissions to the Internet Identity Principal `bivov-zoivv-elizs-vxwob-drkj7-3idkg-ay4cf-tugyq-vy2rd-oretd-vae` so this user can access the existing Admin Dashboard and manage Notices, Events, and Gallery items.",
       "reqIds": [
-        "REQ-4"
+        "REQ-1"
       ],
       "status": "pending"
     }
   ],
-  "projectName": "Seed gallery with temporary placeholder images and unblock admin access",
+  "projectName": "Grant admin access to provided Principal and add gallery image upload for Notices/Events management",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

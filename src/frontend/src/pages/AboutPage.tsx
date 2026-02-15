@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Target, Eye, Users } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Target, Eye, Users, FileText, Download } from 'lucide-react';
 
 export default function AboutPage() {
   return (
@@ -76,6 +77,33 @@ export default function AboutPage() {
                 <div className="font-semibold text-ncrl-blue">Members –</div>
                 <div className="text-muted-foreground">[List of names]</div>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="mt-8">
+          <CardHeader>
+            <div className="mb-2 flex items-center gap-3">
+              <div className="rounded-full bg-ncrl-emerald/10 p-3">
+                <FileText className="h-6 w-6 text-ncrl-emerald" />
+              </div>
+              <CardTitle className="text-ncrl-blue">Bylaws</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-lg border border-border/50 p-4">
+              <div className="mb-3">
+                <h3 className="font-semibold text-ncrl-blue">Association Bylaws and Rules</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Official bylaws and rules governing the association
+                </p>
+              </div>
+              <Button asChild className="bg-ncrl-emerald hover:bg-ncrl-emerald/90">
+                <a href="/assets/documents/association-bylaws-placeholder.pdf" target="_blank" rel="noopener noreferrer">
+                  <Download className="mr-2 h-4 w-4" />
+                  View / Download
+                </a>
+              </Button>
             </div>
           </CardContent>
         </Card>

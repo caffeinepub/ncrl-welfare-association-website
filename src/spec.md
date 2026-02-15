@@ -1,12 +1,11 @@
 # Specification
 
 ## Summary
-**Goal:** Ensure the Gallery never appears empty on fresh deploy/upgrade, persist gallery data across upgrades, and unblock admin access by making the user’s Principal ID visible and providing a safe admin bootstrap path.
+**Goal:** Enable the provided Internet Identity Principal to access the Admin Dashboard and allow admins to upload local image files when creating Gallery items.
 
 **Planned changes:**
-- Backend: On deploy/upgrade, automatically seed the gallery with a small fixed set of placeholder Gallery items when the gallery is empty (idempotent; items deletable via existing admin delete).
-- Backend: Fix gallery state persistence across canister upgrades, including preserving items and maintaining the next ID allocator value; add a migration file only if required.
-- Frontend: When a logged-in user is denied admin access, display their Internet Identity Principal ID in a copyable format (English text only; no changes to restricted frontend paths).
-- Backend: Add a documented, deterministic mechanism to bootstrap/restore admin privileges when no working admin is available.
+- Grant admin permissions to Internet Identity Principal `bivov-zoivv-elizs-vxwob-drkj7-3idkg-ay4cf-tugyq-vy2rd-oretd-vae` so they can manage Notices, Events, and Gallery items without authorization errors.
+- Update the Admin Dashboard Gallery management form to support selecting a local image file, converting it to a Data URL, and storing it in the existing `imageUrl` field when adding a gallery item.
+- Add basic client-side validation for uploaded images (image type and reasonable size limit) with clear English error messages.
 
-**User-visible outcome:** Visitors see placeholder items instead of an empty Gallery on fresh deploys, gallery content remains after upgrades, non-admin users can copy their Principal ID from the Access Denied screen, and admin access can be safely recovered to regain access to the Admin dashboard.
+**User-visible outcome:** The specified Principal can open `/admin` and manage Notices/Events/Gallery items, and admins can upload an image file for new Gallery items without pasting an external URL, with validation feedback when files are invalid.

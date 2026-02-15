@@ -5,6 +5,7 @@ import Runtime "mo:core/Runtime";
 import Time "mo:core/Time";
 import Order "mo:core/Order";
 import Principal "mo:core/Principal";
+
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 import Migration "migration";
@@ -89,7 +90,7 @@ actor {
     name : Text;
   };
 
-  let accessControlState = AccessControl.initState();
+  let accessControlState = AccessControl.initState(); // Only reinitialize when no persistent state is needed.
   include MixinAuthorization(accessControlState);
 
   var nextNoticeId = 1;
@@ -107,7 +108,45 @@ actor {
   let contactSubmissions = Map.empty<Nat, ContactFormSubmission>();
   let userProfiles = Map.empty<Principal, UserProfile>();
 
-  // User Profile Management
+  let defaultGalleryItems : [GalleryItem] = [
+    {
+      id = 1;
+      title = "Community Garden";
+      imageUrl = "/assets/generated/gallery-garden.png";
+      description = "A beautiful view of our community garden in full bloom.";
+    },
+    {
+      id = 2;
+      title = "Annual Picnic";
+      imageUrl = "/assets/generated/gallery-picnic.png";
+      description = "Family members enjoying games and food at the annual picnic.";
+    },
+    {
+      id = 3;
+      title = "Welfare Drive";
+      imageUrl = "/assets/generated/gallery-drive.png";
+      description = "Volunteers organizing donated goods for local families.";
+    },
+    {
+      id = 4;
+      title = "Cultural Night";
+      imageUrl = "/assets/generated/gallery-culture.png";
+      description = "A snapshot of performances during Cultural Night celebrations.";
+    },
+    {
+      id = 5;
+      title = "Clean-Up Day";
+      imageUrl = "/assets/generated/gallery-cleanup.png";
+      description = "Residents participating in neighborhood clean-up efforts.";
+    },
+    {
+      id = 6;
+      title = "Community Center";
+      imageUrl = "/assets/generated/gallery-community.png";
+      description = "The new community center now available for local events.";
+    },
+  ];
+
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can access profiles");
@@ -129,7 +168,6 @@ actor {
     userProfiles.add(caller, profile);
   };
 
-  // Notice CRUD operations
   public shared ({ caller }) func createNotice(category : NoticeCategory, title : Text, content : Text, date : Text) : async Nat {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
       Runtime.trap("Unauthorized: Only admins can create notices");
@@ -179,7 +217,6 @@ actor {
     };
   };
 
-  // Event CRUD operations
   public shared ({ caller }) func createEvent(eventType : EventType, title : Text, description : Text, date : Text, isPast : Bool) : async Nat {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
       Runtime.trap("Unauthorized: Only admins can create events");
@@ -219,7 +256,6 @@ actor {
     };
   };
 
-  // Gallery CRUD operations
   public shared ({ caller }) func addGalleryItem(title : Text, imageUrl : Text, description : Text) : async Nat {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
       Runtime.trap("Unauthorized: Only admins can add gallery items");
@@ -237,7 +273,12 @@ actor {
   };
 
   public query func getGalleryItems() : async [GalleryItem] {
-    galleryItems.values().toArray();
+    let itemsArray = galleryItems.values().toArray();
+    if (itemsArray.size() == 0) {
+      defaultGalleryItems;
+    } else {
+      itemsArray;
+    };
   };
 
   public shared ({ caller }) func deleteGalleryItem(id : Nat) : async () {
@@ -252,13 +293,8 @@ actor {
     };
   };
 
-  // Membership & Payment
   public shared ({ caller }) func submitMembershipRegistration(name : Text, address : Text, email : Text, phone : Text, membershipType : MembershipType) : async Nat {
-    // Require authenticated user (not anonymous) to prevent spam
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only authenticated users can submit membership registration");
-    };
-
+    // No authorization check - allow guests to register for membership
     let newMembership : MembershipRegistration = {
       id = nextMembershipId;
       name;
@@ -273,7 +309,6 @@ actor {
   };
 
   public shared ({ caller }) func submitPayment(memberId : Nat, amount : Nat, paymentType : PaymentType, date : Text) : async Nat {
-    // Payment is a sensitive financial operation - require user authentication
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only authenticated users can submit payments");
     };
@@ -291,10 +326,7 @@ actor {
   };
 
   public shared ({ caller }) func submitContactForm(name : Text, email : Text, message : Text, date : Text) : async Nat {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only authenticated users can submit contact forms");
-    };
-
+    // No authorization check - allow guests to submit contact forms
     let newContact : ContactFormSubmission = {
       id = nextContactId;
       name;
@@ -307,7 +339,6 @@ actor {
     newContact.id;
   };
 
-  // Contact Info
   public query func getContactInfo() : async (Text, Text, Text) {
     (
       "123 Main St, City, Country",

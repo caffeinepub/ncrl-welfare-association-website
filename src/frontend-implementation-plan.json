@@ -1,21 +1,27 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Show Principal ID on Admin Access Denied screen",
+  "title": "Admin Gallery image upload (Data URL) support",
   "requirements": [
     {
-      "id": "REQ-3",
-      "summary": "Expose the logged-in user's Internet Identity Principal ID in the Admin Access Denied UI with a copy action so an existing admin can grant access.",
+      "id": "REQ-2",
+      "summary": "Add image file upload to Admin Dashboard Gallery form, convert to Data URL for imageUrl, and ensure Gallery renders Data URLs with validation and clear errors.",
       "acceptanceCriteria": [
-        "When a logged-in user is not an admin, the Access Denied UI displays their Principal ID in a copyable format (e.g., a monospace text field with a Copy button).",
-        "All user-facing text for this feature is in English.",
-        "No changes are made to immutable frontend paths listed in SYSTEM_CONTEXT."
+        "In the Admin Dashboard > Gallery tab, the add-gallery-item form includes a file input (accepting common image types like PNG/JPG/WebP).",
+        "When an admin selects an image file, the UI converts it to a Data URL and uses it as the `imageUrl` when calling addGalleryItem, without requiring the admin to manually paste a URL.",
+        "If the selected file is not an image or exceeds a reasonable size limit, the UI blocks submission and shows an English error message explaining why.",
+        "After adding a gallery item with an uploaded image, the Gallery page displays the new item and renders the uploaded image correctly using the stored Data URL."
       ],
       "file_operations": [
         {
           "path": "frontend/src/pages/AdminPage.tsx",
           "operation": "modify",
-          "description": "Update the non-admin \"Access Denied\" card to display the currently logged-in user's Principal ID (derived from the existing Internet Identity `identity`) and provide a Copy button. Use shadcn-ui components (e.g., Input + Button) to render a read-only, monospace Principal field and a copy action via the Clipboard API with English success/failure feedback (e.g., toast). Verify the component's usage instructions before implementing."
+          "description": "Update the existing Gallery admin UI to include an image file input (accept=\"image/png,image/jpeg,image/webp,image/gif\"), read the selected file via FileReader into a Data URL string, and submit that Data URL as `imageUrl` in the existing useAddGalleryItem mutation. Add basic client-side validation (must be an image MIME type; enforce a reasonable max file size such as 2–5MB; handle empty selection) and show clear English error messages (e.g., via existing toast usage). Optionally show a small preview of the selected image and/or the computed Data URL state to confirm selection. Use existing shadcn-ui form components already in the file (Input/Label/Button/Card/etc.) to keep UI consistent. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/lib/gallery.ts",
+          "operation": "modify",
+          "description": "Extend gallery item validation to treat Data URLs as valid image sources by allowing `imageUrl` values starting with \"data:image/\" (in addition to existing http/https and leading \"/\" paths). This ensures newly uploaded Data URL images are not filtered out by processing/fallback logic and will render on the Gallery page."
         }
       ]
     }

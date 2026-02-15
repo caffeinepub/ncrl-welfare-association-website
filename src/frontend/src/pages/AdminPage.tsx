@@ -24,7 +24,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Loader2, Trash2, Shield, LogIn, Copy, Check } from 'lucide-react';
+import { Loader2, Trash2, Shield, LogIn, Copy, Check, Upload, X } from 'lucide-react';
 import { NoticeCategory, EventType } from '../backend';
 import { getNoticeCategoryLabel } from '../lib/notices';
 import { getEventTypeLabel } from '../lib/events';
@@ -538,13 +538,14 @@ function EventsAdmin() {
                   <TableHead>Title</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Date</TableHead>
+                  <TableHead>Status</TableHead>
                   <TableHead className="w-[80px]">Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {allEvents.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center text-muted-foreground">
+                    <TableCell colSpan={5} className="text-center text-muted-foreground">
                       No events found
                     </TableCell>
                   </TableRow>
@@ -554,6 +555,17 @@ function EventsAdmin() {
                       <TableCell className="font-medium">{event.title}</TableCell>
                       <TableCell>{getEventTypeLabel(event.eventType)}</TableCell>
                       <TableCell>{event.date}</TableCell>
+                      <TableCell>
+                        <span
+                          className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
+                            event.isPast
+                              ? 'bg-gray-100 text-gray-700'
+                              : 'bg-ncrl-green/10 text-ncrl-green'
+                          }`}
+                        >
+                          {event.isPast ? 'Past' : 'Upcoming'}
+                        </span>
+                      </TableCell>
                       <TableCell>
                         <Button
                           variant="ghost"
@@ -578,21 +590,100 @@ function EventsAdmin() {
 
 function GalleryAdmin() {
   const [title, setTitle] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
   const [description, setDescription] = useState('');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
 
   const { data: galleryItems = [] } = useGalleryItems();
   const addGalleryItem = useAddGalleryItem();
   const deleteGalleryItem = useDeleteGalleryItem();
 
+  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+  const ALLOWED_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif'];
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    setFileError(null);
+    
+    if (!file) {
+      setSelectedFile(null);
+      setImagePreview(null);
+      setImageDataUrl(null);
+      return;
+    }
+
+    // Validate file type
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      setFileError('Please select a valid image file (PNG, JPG, WebP, or GIF)');
+      setSelectedFile(null);
+      setImagePreview(null);
+      setImageDataUrl(null);
+      e.target.value = '';
+      return;
+    }
+
+    // Validate file size
+    if (file.size > MAX_FILE_SIZE) {
+      setFileError('Image file size must be less than 5MB');
+      setSelectedFile(null);
+      setImagePreview(null);
+      setImageDataUrl(null);
+      e.target.value = '';
+      return;
+    }
+
+    setSelectedFile(file);
+
+    // Create preview and data URL
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const result = reader.result as string;
+      setImagePreview(result);
+      setImageDataUrl(result);
+    };
+    reader.onerror = () => {
+      setFileError('Failed to read the image file');
+      setSelectedFile(null);
+      setImagePreview(null);
+      setImageDataUrl(null);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleClearFile = () => {
+    setSelectedFile(null);
+    setImagePreview(null);
+    setImageDataUrl(null);
+    setFileError(null);
+    const fileInput = document.getElementById('gallery-image') as HTMLInputElement;
+    if (fileInput) fileInput.value = '';
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!imageDataUrl) {
+      toast.error('Please select an image file');
+      return;
+    }
+
+    if (fileError) {
+      toast.error(fileError);
+      return;
+    }
+
     try {
-      await addGalleryItem.mutateAsync({ title, imageUrl, description });
+      await addGalleryItem.mutateAsync({
+        title,
+        imageUrl: imageDataUrl,
+        description,
+      });
       toast.success('Gallery item added successfully!');
       setTitle('');
-      setImageUrl('');
       setDescription('');
+      handleClearFile();
     } catch (error: any) {
       toast.error(error.message || 'Failed to add gallery item');
     }
@@ -613,14 +704,14 @@ function GalleryAdmin() {
       <Card>
         <CardHeader>
           <CardTitle>Add Gallery Item</CardTitle>
-          <CardDescription>Add a new image to the gallery</CardDescription>
+          <CardDescription>Upload a new image to the gallery</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <Label htmlFor="galleryTitle">Title</Label>
+              <Label htmlFor="gallery-title">Title</Label>
               <Input
-                id="galleryTitle"
+                id="gallery-title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Image title"
@@ -629,20 +720,9 @@ function GalleryAdmin() {
             </div>
 
             <div>
-              <Label htmlFor="imageUrl">Image URL</Label>
-              <Input
-                id="imageUrl"
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-                placeholder="https://example.com/image.jpg"
-                required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="galleryDescription">Description</Label>
+              <Label htmlFor="gallery-description">Description</Label>
               <Textarea
-                id="galleryDescription"
+                id="gallery-description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Image description"
@@ -651,14 +731,74 @@ function GalleryAdmin() {
               />
             </div>
 
-            <Button type="submit" disabled={addGalleryItem.isPending} className="w-full">
+            <div>
+              <Label htmlFor="gallery-image">Image File</Label>
+              <div className="mt-2 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="gallery-image"
+                    type="file"
+                    accept="image/png,image/jpeg,image/jpg,image/webp,image/gif"
+                    onChange={handleFileChange}
+                    className="cursor-pointer"
+                  />
+                  {selectedFile && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleClearFile}
+                      className="shrink-0"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+                
+                {fileError && (
+                  <p className="text-sm text-destructive">{fileError}</p>
+                )}
+                
+                {selectedFile && !fileError && (
+                  <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground">
+                      Selected: {selectedFile.name} ({(selectedFile.size / 1024).toFixed(1)} KB)
+                    </p>
+                    {imagePreview && (
+                      <div className="relative overflow-hidden rounded-lg border">
+                        <img
+                          src={imagePreview}
+                          alt="Preview"
+                          className="h-48 w-full object-cover"
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                {!selectedFile && (
+                  <div className="flex items-center gap-2 rounded-lg border border-dashed p-4 text-center">
+                    <Upload className="h-5 w-5 text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">
+                      PNG, JPG, WebP, or GIF (max 5MB)
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <Button
+              type="submit"
+              disabled={addGalleryItem.isPending || !selectedFile || !!fileError}
+              className="w-full"
+            >
               {addGalleryItem.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Adding...
                 </>
               ) : (
-                'Add Gallery Item'
+                'Add to Gallery'
               )}
             </Button>
           </form>
@@ -675,8 +815,8 @@ function GalleryAdmin() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Image</TableHead>
                   <TableHead>Title</TableHead>
-                  <TableHead>Description</TableHead>
                   <TableHead className="w-[80px]">Action</TableHead>
                 </TableRow>
               </TableHeader>
@@ -690,8 +830,14 @@ function GalleryAdmin() {
                 ) : (
                   galleryItems.map((item) => (
                     <TableRow key={Number(item.id)}>
+                      <TableCell>
+                        <img
+                          src={item.imageUrl}
+                          alt={item.title}
+                          className="h-12 w-12 rounded object-cover"
+                        />
+                      </TableCell>
                       <TableCell className="font-medium">{item.title}</TableCell>
-                      <TableCell className="max-w-xs truncate">{item.description}</TableCell>
                       <TableCell>
                         <Button
                           variant="ghost"

@@ -2,7 +2,6 @@ import { RouterProvider, createRouter, createRoute, createRootRoute } from '@tan
 import SiteLayout from './components/SiteLayout';
 import HomePage from './pages/HomePage';
 import AboutPage from './pages/AboutPage';
-import DocumentsPage from './pages/DocumentsPage';
 import NoticesPage from './pages/NoticesPage';
 import EventsPage from './pages/EventsPage';
 import MembershipPaymentsPage from './pages/MembershipPaymentsPage';
@@ -24,12 +23,6 @@ const aboutRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/about',
   component: AboutPage,
-});
-
-const documentsRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: '/documents',
-  component: DocumentsPage,
 });
 
 const noticesRoute = createRoute({
@@ -71,7 +64,6 @@ const adminRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   indexRoute,
   aboutRoute,
-  documentsRoute,
   noticesRoute,
   eventsRoute,
   membershipRoute,

@@ -7,7 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useLatestNotices, useUpcomingEventsPreview, useContactInfo, useGalleryItems } from '../hooks/useQueries';
 import { getNoticeCategoryLabel } from '../lib/notices';
 import { getEventTypeLabel } from '../lib/events';
-import { processGalleryItems } from '../lib/gallery';
+import { getGalleryItemsWithFallback } from '../lib/gallery';
 import ContactForm from '../components/forms/ContactForm';
 
 export default function HomePage() {
@@ -16,8 +16,8 @@ export default function HomePage() {
   const { data: contactInfo, isLoading: contactLoading } = useContactInfo();
   const { data: galleryItems, isLoading: galleryLoading } = useGalleryItems();
 
-  const processedGallery = galleryItems ? processGalleryItems(galleryItems) : [];
-  const galleryPreview = processedGallery.slice(0, 6);
+  const displayGallery = getGalleryItemsWithFallback(galleryItems);
+  const galleryPreview = displayGallery.slice(0, 6);
 
   return (
     <div className="flex flex-col">
@@ -246,7 +246,7 @@ export default function HomePage() {
                 <Skeleton key={i} className="aspect-square w-full rounded-lg" />
               ))}
             </div>
-          ) : galleryPreview.length > 0 ? (
+          ) : (
             <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
               {galleryPreview.map((item) => (
                 <Link
@@ -264,13 +264,6 @@ export default function HomePage() {
                 </Link>
               ))}
             </div>
-          ) : (
-            <Card>
-              <CardContent className="py-12 text-center">
-                <Image className="mx-auto mb-4 h-12 w-12 text-muted-foreground/50" />
-                <p className="text-muted-foreground">No gallery images available yet.</p>
-              </CardContent>
-            </Card>
           )}
         </div>
       </section>
@@ -286,44 +279,36 @@ export default function HomePage() {
 
             {contactLoading ? (
               <div className="space-y-4">
-                <Skeleton className="h-16 w-full" />
-                <Skeleton className="h-16 w-full" />
-                <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-6 w-3/4" />
+                <Skeleton className="h-6 w-2/3" />
+                <Skeleton className="h-6 w-1/2" />
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="flex items-start gap-4">
-                  <div className="rounded-full bg-ncrl-emerald/10 p-3">
-                    <MapPin className="h-5 w-5 text-ncrl-emerald" />
-                  </div>
+                <div className="flex items-start gap-3">
+                  <MapPin className="mt-1 h-5 w-5 text-ncrl-emerald" />
                   <div>
                     <h3 className="font-semibold text-ncrl-blue">Address</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {contactInfo?.address || 'New City Regency Layout, Bangalore'}
+                    <p className="text-muted-foreground">
+                      {contactInfo?.address || '123 Main St, City, Country'}
                     </p>
                   </div>
                 </div>
-
-                <div className="flex items-start gap-4">
-                  <div className="rounded-full bg-ncrl-emerald/10 p-3">
-                    <Phone className="h-5 w-5 text-ncrl-emerald" />
-                  </div>
+                <div className="flex items-start gap-3">
+                  <Phone className="mt-1 h-5 w-5 text-ncrl-emerald" />
                   <div>
                     <h3 className="font-semibold text-ncrl-blue">Phone</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {contactInfo?.phone || '+91 XXXX XXXXXX'}
+                    <p className="text-muted-foreground">
+                      {contactInfo?.phone || '+1234567890'}
                     </p>
                   </div>
                 </div>
-
-                <div className="flex items-start gap-4">
-                  <div className="rounded-full bg-ncrl-emerald/10 p-3">
-                    <Mail className="h-5 w-5 text-ncrl-emerald" />
-                  </div>
+                <div className="flex items-start gap-3">
+                  <Mail className="mt-1 h-5 w-5 text-ncrl-emerald" />
                   <div>
                     <h3 className="font-semibold text-ncrl-blue">Email</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {contactInfo?.email || 'info@ncrl.org'}
+                    <p className="text-muted-foreground">
+                      {contactInfo?.email || 'info@association.com'}
                     </p>
                   </div>
                 </div>
@@ -332,14 +317,7 @@ export default function HomePage() {
           </div>
 
           <div>
-            <Card>
-              <CardHeader>
-                <CardTitle>Send us a message</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ContactForm />
-              </CardContent>
-            </Card>
+            <ContactForm />
           </div>
         </div>
       </section>

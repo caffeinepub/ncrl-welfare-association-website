@@ -2,9 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-unblock-admin-access-management-by-exposing-the-logged-in-internet-identity-principal-id-in-the-admin-access-denied-screen-and-or-admin-page-header-so-an-existing-administrator-can-grant-permissions-for-that-principal",
-      "featureTitle": "Unblock admin access management by exposing the logged-in Internet Identity Principal ID in the Admin Access Denied screen and/or Admin page header so an existing administrator can grant permissions for that Principal.",
+      "featureId": "feature-add-an-image-file-upload-option-in-the-admin-dashboard-gallery-management-ui-so-admins-can-choose-a-local-image-file-and-have-it-saved-as-the-gallery-item-image-store-the-image-in-the-existing-imageurl-field-using-a-data-url-string-with-basic-client-side-validation-and-clear-english-error-messages",
+      "featureTitle": "Add an image file upload option in the Admin Dashboard Gallery management UI so admins can choose a local image file and have it saved as the gallery item image (store the image in the existing `imageUrl` field using a Data URL string, with basic client-side validation and clear English error messages).",
       "files": [
+        "frontend/src/lib/gallery.ts",
         "frontend/src/pages/AdminPage.tsx"
       ],
       "components": [
@@ -16,7 +17,7 @@
         "authorization@4.0.0"
       ],
       "testIds": [
-        "REQ-3"
+        "REQ-2"
       ],
       "confidence": "high"
     }

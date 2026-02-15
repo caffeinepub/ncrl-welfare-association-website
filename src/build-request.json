@@ -1,101 +1,69 @@
 {
   "kind": "build_request",
-  "title": "Seed gallery with temporary placeholder images and unblock admin access",
-  "priority": "normal",
+  "title": "Grant admin access to provided Principal and add gallery image upload for Notices/Events management",
+  "priority": "high",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Automatically seed the Gallery with a small set of temporary placeholder images when the canister is deployed/upgraded and the gallery is currently empty, so the public Gallery page no longer shows an empty state. The seeded items must be removable later via the existing admin delete functionality.",
+      "text": "Grant admin permissions to the Internet Identity Principal `bivov-zoivv-elizs-vxwob-drkj7-3idkg-ay4cf-tugyq-vy2rd-oretd-vae` so this user can access the existing Admin Dashboard and manage Notices, Events, and Gallery items.",
       "target": "backend",
       "source": {
         "messageIds": [
-          "msg-7",
-          "msg-11"
+          "msg-6"
         ],
         "quotes": [
-          "add some random pics for now. which I can delete later using admin priviledges",
-          "yes"
+          "I want to upload image and notices and events \nPrincipal id:\nbivov-zoivv-elizs-vxwob-drkj7-3idkg-ay4cf-tugyq-vy2rd-oretd-vae"
         ]
       },
       "acceptanceCriteria": [
-        "On a fresh deployment (or after an upgrade) where `getGalleryItems()` would otherwise return an empty list, the canister creates a fixed number of placeholder `GalleryItem`s automatically.",
-        "The placeholder items include non-empty `title`, `imageUrl`, and `description` fields and render correctly in the existing Gallery UI without frontend code changes.",
-        "Seeding is idempotent: it does not create duplicates on subsequent upgrades/runs if the gallery is already non-empty.",
-        "Seeded placeholder items can be deleted using the existing `deleteGalleryItem` admin mutation once admin access is available."
+        "When logged in with Internet Identity Principal `bivov-zoivv-elizs-vxwob-drkj7-3idkg-ay4cf-tugyq-vy2rd-oretd-vae`, the /admin page no longer shows the \"Access Denied\" card and instead renders the Admin Dashboard tabs.",
+        "The Principal can successfully create and delete notices via createNotice/deleteNotice without receiving an \"Unauthorized\" trap.",
+        "The Principal can successfully create and delete events via createEvent/deleteEvent without receiving an \"Unauthorized\" trap.",
+        "The Principal can successfully add and delete gallery items via addGalleryItem/deleteGalleryItem without receiving an \"Unauthorized\" trap."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Fix data persistence for Gallery items so that gallery content (including the placeholder seed items and any future uploads) is retained across canister upgrades.",
-      "target": "backend",
-      "source": {
-        "messageIds": [
-          "msg-3",
-          "msg-4"
-        ],
-        "quotes": [
-          "No gallery images available at the moment.\n\nCheck back later for photos of community events and activities.",
-          "It simply means your gallery currently has no photos stored for that section. Once images are uploaded again (for example, the Bengaluru event photos), they will appear automatically."
-        ]
-      },
-      "acceptanceCriteria": [
-        "After deploying an upgrade, `getGalleryItems()` returns the same items that existed before the upgrade (no data loss).",
-        "`nextGalleryItemId` (or equivalent ID allocator) continues from the correct value after upgrade, avoiding ID collisions.",
-        "If a state migration is required, it is implemented via `backend/migration.mo` under the project’s conditional migration policy."
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "text": "Unblock admin access management by exposing the logged-in Internet Identity Principal ID in the Admin Access Denied screen and/or Admin page header so an existing administrator can grant permissions for that Principal.",
+      "text": "Add an image file upload option in the Admin Dashboard Gallery management UI so admins can choose a local image file and have it saved as the gallery item image (store the image in the existing `imageUrl` field using a Data URL string, with basic client-side validation and clear English error messages).",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-5"
+          "msg-6"
         ],
         "quotes": [
-          "Access Denied\nYou do not have permission to access the admin dashboard. Please contact an administrator if you believe this is an error."
+          "I want to upload image and notices and events"
         ]
       },
       "acceptanceCriteria": [
-        "When a logged-in user is not an admin, the Access Denied UI displays their Principal ID in a copyable format (e.g., a monospace text field with a Copy button).",
-        "All user-facing text for this feature is in English.",
-        "No changes are made to immutable frontend paths listed in SYSTEM_CONTEXT."
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "text": "Provide a clear backend-side path to restore/assign admin privileges for a Principal when no working admin is available (to resolve the current “Access Denied” dead-end).",
-      "target": "backend",
-      "source": {
-        "messageIds": [
-          "msg-5",
-          "msg-7"
-        ],
-        "quotes": [
-          "Access Denied\nYou do not have permission to access the admin dashboard. Please contact an administrator if you believe this is an error.",
-          "add some random pics for now. which I can delete later using admin priviledges"
-        ]
-      },
-      "acceptanceCriteria": [
-        "There is a documented, deterministic mechanism to bootstrap admin access after deployment (e.g., a one-time initialization rule when no admins exist, or an explicitly callable bootstrap method guarded by a safe condition).",
-        "Once the user’s Principal is granted admin, `isCallerAdmin()` returns true for that Principal and the Admin dashboard loads successfully.",
-        "The solution does not require external services or third-party authentication beyond Internet Identity."
+        "In the Admin Dashboard > Gallery tab, the add-gallery-item form includes a file input (accepting common image types like PNG/JPG/WebP).",
+        "When an admin selects an image file, the UI converts it to a Data URL and uses it as the `imageUrl` when calling addGalleryItem, without requiring the admin to manually paste a URL.",
+        "If the selected file is not an image or exceeds a reasonable size limit, the UI blocks submission and shows an English error message explaining why.",
+        "After adding a gallery item with an uploaded image, the Gallery page displays the new item and renders the uploaded image correctly using the stored Data URL."
       ]
     }
   ],
   "constraints": [
     "Backend must remain a single Motoko actor in `backend/main.mo` (no additional backend services).",
-    "Only generate/modify `backend/migration.mo` if needed to preserve existing state during upgrades (conditional migration policy).",
-    "Do not edit any frontend files under `frontend/src/components/ui`, `frontend/src/hooks/useInternetIdentity.ts(x)`, `frontend/src/hooks/useActor.ts`, or `frontend/src/main.tsx`.",
-    "Use English for any user-facing text."
+    "Do not edit any frontend files under `frontend/src/components/ui` or any paths listed in `frontend.immutablePaths` in SYSTEM_CONTEXT.",
+    "Use English for all user-facing text."
   ],
   "nonGoals": [
-    "Re-uploading or recreating the original Bengaluru event photo set (not provided in this request).",
-    "Adding third-party storage, databases, or external admin/auth providers.",
-    "Building a real-time gallery upload pipeline or integrating external image hosting APIs."
+    "Implementing external image hosting or third-party storage integrations.",
+    "Adding non-Internet-Identity authentication methods.",
+    "Building a separate public-facing content submission workflow for non-admin users."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
+  },
+  "userProfileUpdate": {
+    "goalsToAdd": [],
+    "goalsToRemove": [],
+    "preferencesToAdd": [],
+    "preferencesToRemove": [],
+    "miscToAdd": [],
+    "miscToRemove": [],
+    "fieldsToSet": {},
+    "fieldsToDelete": []
   }
 }

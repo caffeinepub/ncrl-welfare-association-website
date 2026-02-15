@@ -4,14 +4,14 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import GalleryLightbox from '../components/gallery/GalleryLightbox';
 import { useGalleryItems } from '../hooks/useQueries';
-import { processGalleryItems } from '../lib/gallery';
+import { getGalleryItemsWithFallback } from '../lib/gallery';
 
 export default function GalleryPage() {
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
   const { data: galleryItems, isLoading, isError, error } = useGalleryItems();
 
-  const processedItems = galleryItems ? processGalleryItems(galleryItems) : [];
-  const images = processedItems.map((item) => ({
+  const displayItems = getGalleryItemsWithFallback(galleryItems);
+  const images = displayItems.map((item) => ({
     src: item.imageUrl,
     alt: item.description || item.title,
   }));
@@ -40,7 +40,7 @@ export default function GalleryPage() {
               </p>
             </CardContent>
           </Card>
-        ) : images.length > 0 ? (
+        ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {images.map((image, index) => (
               <button
@@ -58,16 +58,6 @@ export default function GalleryPage() {
               </button>
             ))}
           </div>
-        ) : (
-          <Card>
-            <CardContent className="py-16 text-center">
-              <Image className="mx-auto mb-4 h-16 w-16 text-muted-foreground/50" />
-              <p className="text-lg text-muted-foreground">No gallery images available at the moment.</p>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Check back later for photos of community events and activities.
-              </p>
-            </CardContent>
-          </Card>
         )}
 
         {selectedImageIndex !== null && images.length > 0 && (
