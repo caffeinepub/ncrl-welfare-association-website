@@ -1,120 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useActor } from './useActor';
-import { NoticeCategory, MembershipType, EventType, GalleryItem } from '../backend';
+import { NoticeCategory, EventType, MembershipType, PaymentType, UserProfile } from '../backend';
+import { normalizeBackendError } from '../utils/backendErrors';
 
-export function useNotices(category: NoticeCategory) {
-  const { actor, isFetching } = useActor();
-
-  return useQuery({
-    queryKey: ['notices', category],
-    queryFn: async () => {
-      if (!actor) return [];
-      return actor.getNoticesByCategory(category);
-    },
-    enabled: !!actor && !isFetching,
-  });
-}
-
-export function useLatestNotices(limit: number = 5) {
-  const { actor, isFetching } = useActor();
-
-  return useQuery({
-    queryKey: ['notices', 'latest', limit],
-    queryFn: async () => {
-      if (!actor) return [];
-      return actor.getLatestNotices(BigInt(limit));
-    },
-    enabled: !!actor && !isFetching,
-  });
-}
-
-export function useUpcomingEvents() {
-  const { actor, isFetching } = useActor();
-
-  return useQuery({
-    queryKey: ['events', 'upcoming'],
-    queryFn: async () => {
-      if (!actor) return [];
-      return actor.getUpcomingEvents();
-    },
-    enabled: !!actor && !isFetching,
-  });
-}
-
-export function useUpcomingEventsPreview(limit: number = 3) {
-  const { actor, isFetching } = useActor();
-
-  return useQuery({
-    queryKey: ['events', 'upcoming', 'preview', limit],
-    queryFn: async () => {
-      if (!actor) return [];
-      const events = await actor.getUpcomingEvents();
-      return events.slice(0, limit);
-    },
-    enabled: !!actor && !isFetching,
-  });
-}
-
-export function usePastEvents() {
-  const { actor, isFetching } = useActor();
-
-  return useQuery({
-    queryKey: ['events', 'past'],
-    queryFn: async () => {
-      if (!actor) return [];
-      return actor.getPastEvents();
-    },
-    enabled: !!actor && !isFetching,
-  });
-}
-
-export function useGalleryItems() {
-  const { actor, isFetching } = useActor();
-
-  return useQuery<GalleryItem[]>({
-    queryKey: ['gallery', 'items'],
-    queryFn: async () => {
-      if (!actor) throw new Error('Actor not available');
-      const items = await actor.getGalleryItems();
-      return items;
-    },
-    enabled: !!actor && !isFetching,
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    retry: 2,
-  });
-}
-
-export function useContactInfo() {
-  const { actor, isFetching } = useActor();
-
-  return useQuery({
-    queryKey: ['contact', 'info'],
-    queryFn: async () => {
-      if (!actor) return { address: '', phone: '', email: '' };
-      const [address, phone, email] = await actor.getContactInfo();
-      return { address, phone, email };
-    },
-    enabled: !!actor && !isFetching,
-  });
-}
-
-export function useIsCallerAdmin() {
-  const { actor, isFetching } = useActor();
-
-  return useQuery({
-    queryKey: ['admin', 'check'],
-    queryFn: async () => {
-      if (!actor) return false;
-      return actor.isCallerAdmin();
-    },
-    enabled: !!actor && !isFetching,
-  });
-}
-
+// User Profile Queries
 export function useGetCallerUserProfile() {
   const { actor, isFetching: actorFetching } = useActor();
 
-  const query = useQuery({
+  const query = useQuery<UserProfile | null>({
     queryKey: ['currentUserProfile'],
     queryFn: async () => {
       if (!actor) throw new Error('Actor not available');
@@ -136,76 +29,102 @@ export function useSaveCallerUserProfile() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (profile: { name: string }) => {
-      if (!actor) throw new Error('Actor not initialized');
+    mutationFn: async (profile: UserProfile) => {
+      if (!actor) throw new Error('Actor not available');
       return actor.saveCallerUserProfile(profile);
     },
     onSuccess: () => {
+      // Invalidate both profile and admin queries after profile save
       queryClient.invalidateQueries({ queryKey: ['currentUserProfile'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'isCallerAdmin'] });
+    },
+    onError: (error: any) => {
+      throw new Error(normalizeBackendError(error));
     },
   });
 }
 
-export function useSubmitMembership() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
+// Admin Check Query
+export function useIsCallerAdmin() {
+  const { actor, isFetching: actorFetching } = useActor();
 
-  return useMutation({
-    mutationFn: async (data: {
-      name: string;
-      address: string;
-      email: string;
-      phone: string;
-      membershipType: MembershipType;
-    }) => {
-      if (!actor) throw new Error('Actor not initialized');
-      return actor.submitMembershipRegistration(
-        data.name,
-        data.address,
-        data.email,
-        data.phone,
-        data.membershipType
-      );
+  return useQuery<boolean>({
+    queryKey: ['admin', 'isCallerAdmin'],
+    queryFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.isCallerAdmin();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['memberships'] });
-    },
+    enabled: !!actor && !actorFetching,
+    retry: 1,
+    staleTime: 30000, // 30 seconds
   });
 }
 
-export function useSubmitContact() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
+// Notice Queries
+export function useNotices() {
+  const { actor, isFetching } = useActor();
 
-  return useMutation({
-    mutationFn: async (data: { name: string; email: string; message: string }) => {
-      if (!actor) throw new Error('Actor not initialized');
-      const date = new Date().toISOString();
-      return actor.submitContactForm(data.name, data.email, data.message, date);
+  return useQuery({
+    queryKey: ['notices'],
+    queryFn: async () => {
+      if (!actor) return [];
+      const allNotices = await Promise.all([
+        actor.getNoticesByCategory(NoticeCategory.waterSupply),
+        actor.getNoticesByCategory(NoticeCategory.civicIssues),
+        actor.getNoticesByCategory(NoticeCategory.meetings),
+        actor.getNoticesByCategory(NoticeCategory.general),
+      ]);
+      return allNotices.flat();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['contacts'] });
-    },
+    enabled: !!actor && !isFetching,
   });
 }
 
-// Admin mutation hooks
+export function useLatestNotices(limit: number = 3) {
+  const { actor, isFetching } = useActor();
+
+  return useQuery({
+    queryKey: ['notices', 'latest', limit],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getLatestNotices(BigInt(limit));
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
 export function useCreateNotice() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: {
-      category: NoticeCategory;
-      title: string;
-      content: string;
-      date: string;
-    }) => {
-      if (!actor) throw new Error('Actor not initialized');
-      return actor.createNotice(data.category, data.title, data.content, data.date);
+    mutationFn: async ({ category, title, content, date }: { category: NoticeCategory; title: string; content: string; date: string }) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.createNotice(category, title, content, date);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notices'] });
+    },
+    onError: (error: any) => {
+      throw new Error(normalizeBackendError(error));
+    },
+  });
+}
+
+export function useUpdateNotice() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, category, title, content, date }: { id: bigint; category: NoticeCategory; title: string; content: string; date: string }) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.updateNotice(id, category, title, content, date);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notices'] });
+    },
+    onError: (error: any) => {
+      throw new Error(normalizeBackendError(error));
     },
   });
 }
@@ -216,12 +135,42 @@ export function useDeleteNotice() {
 
   return useMutation({
     mutationFn: async (id: bigint) => {
-      if (!actor) throw new Error('Actor not initialized');
+      if (!actor) throw new Error('Actor not available');
       return actor.deleteNotice(id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notices'] });
     },
+    onError: (error: any) => {
+      throw new Error(normalizeBackendError(error));
+    },
+  });
+}
+
+// Event Queries
+export function useUpcomingEvents() {
+  const { actor, isFetching } = useActor();
+
+  return useQuery({
+    queryKey: ['events', 'upcoming'],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getUpcomingEvents();
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
+export function usePastEvents() {
+  const { actor, isFetching } = useActor();
+
+  return useQuery({
+    queryKey: ['events', 'past'],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getPastEvents();
+    },
+    enabled: !!actor && !isFetching,
   });
 }
 
@@ -230,24 +179,35 @@ export function useCreateEvent() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: {
-      eventType: EventType;
-      title: string;
-      description: string;
-      date: string;
-      isPast: boolean;
-    }) => {
-      if (!actor) throw new Error('Actor not initialized');
-      return actor.createEvent(
-        data.eventType,
-        data.title,
-        data.description,
-        data.date,
-        data.isPast
-      );
+    mutationFn: async ({ eventType, title, description, date, isPast }: { eventType: EventType; title: string; description: string; date: string; isPast: boolean }) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.createEvent(eventType, title, description, date, isPast);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['events'] });
+      queryClient.invalidateQueries({ queryKey: ['events', 'upcoming'] });
+      queryClient.invalidateQueries({ queryKey: ['events', 'past'] });
+    },
+    onError: (error: any) => {
+      throw new Error(normalizeBackendError(error));
+    },
+  });
+}
+
+export function useUpdateEvent() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, eventType, title, description, date, isPast }: { id: bigint; eventType: EventType; title: string; description: string; date: string; isPast: boolean }) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.updateEvent(id, eventType, title, description, date, isPast);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['events', 'upcoming'] });
+      queryClient.invalidateQueries({ queryKey: ['events', 'past'] });
+    },
+    onError: (error: any) => {
+      throw new Error(normalizeBackendError(error));
     },
   });
 }
@@ -258,12 +218,30 @@ export function useDeleteEvent() {
 
   return useMutation({
     mutationFn: async (id: bigint) => {
-      if (!actor) throw new Error('Actor not initialized');
+      if (!actor) throw new Error('Actor not available');
       return actor.deleteEvent(id);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['events'] });
+      queryClient.invalidateQueries({ queryKey: ['events', 'upcoming'] });
+      queryClient.invalidateQueries({ queryKey: ['events', 'past'] });
     },
+    onError: (error: any) => {
+      throw new Error(normalizeBackendError(error));
+    },
+  });
+}
+
+// Gallery Queries
+export function useGalleryItems() {
+  const { actor, isFetching } = useActor();
+
+  return useQuery({
+    queryKey: ['gallery'],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getGalleryItems();
+    },
+    enabled: !!actor && !isFetching,
   });
 }
 
@@ -272,12 +250,15 @@ export function useAddGalleryItem() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: { title: string; imageUrl: string; description: string }) => {
-      if (!actor) throw new Error('Actor not initialized');
-      return actor.addGalleryItem(data.title, data.imageUrl, data.description);
+    mutationFn: async ({ title, imageUrl, description }: { title: string; imageUrl: string; description: string }) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.addGalleryItem(title, imageUrl, description);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['gallery', 'items'] });
+      queryClient.invalidateQueries({ queryKey: ['gallery'] });
+    },
+    onError: (error: any) => {
+      throw new Error(normalizeBackendError(error));
     },
   });
 }
@@ -288,11 +269,73 @@ export function useDeleteGalleryItem() {
 
   return useMutation({
     mutationFn: async (id: bigint) => {
-      if (!actor) throw new Error('Actor not initialized');
+      if (!actor) throw new Error('Actor not available');
       return actor.deleteGalleryItem(id);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['gallery', 'items'] });
+      queryClient.invalidateQueries({ queryKey: ['gallery'] });
     },
+    onError: (error: any) => {
+      throw new Error(normalizeBackendError(error));
+    },
+  });
+}
+
+// Membership Queries
+export function useSubmitMembershipRegistration() {
+  const { actor } = useActor();
+
+  return useMutation({
+    mutationFn: async ({ name, address, email, phone, membershipType }: { name: string; address: string; email: string; phone: string; membershipType: MembershipType }) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.submitMembershipRegistration(name, address, email, phone, membershipType);
+    },
+    onError: (error: any) => {
+      throw new Error(normalizeBackendError(error));
+    },
+  });
+}
+
+// Payment Queries
+export function useSubmitPayment() {
+  const { actor } = useActor();
+
+  return useMutation({
+    mutationFn: async ({ memberId, amount, paymentType, date }: { memberId: bigint; amount: bigint; paymentType: PaymentType; date: string }) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.submitPayment(memberId, amount, paymentType, date);
+    },
+    onError: (error: any) => {
+      throw new Error(normalizeBackendError(error));
+    },
+  });
+}
+
+// Contact Queries
+export function useSubmitContactForm() {
+  const { actor } = useActor();
+
+  return useMutation({
+    mutationFn: async ({ name, email, message, date }: { name: string; email: string; message: string; date: string }) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.submitContactForm(name, email, message, date);
+    },
+    onError: (error: any) => {
+      throw new Error(normalizeBackendError(error));
+    },
+  });
+}
+
+export function useContactInfo() {
+  const { actor, isFetching } = useActor();
+
+  return useQuery({
+    queryKey: ['contactInfo'],
+    queryFn: async () => {
+      if (!actor) return null;
+      const [address, phone, email] = await actor.getContactInfo();
+      return { address, phone, email };
+    },
+    enabled: !!actor && !isFetching,
   });
 }

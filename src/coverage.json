@@ -1,45 +1,59 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-15T03:56:24.287Z",
+  "generatedAt": "2026-02-15T10:05:39.129Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 2,
-    "implemented": 1,
+    "total": 3,
+    "implemented": 2,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Grant admin permissions to the Internet Identity Principal `bivov-zoivv-elizs-vxwob-drkj7-3idkg-ay4cf-tugyq-vy2rd-oretd-vae` so this user can access the existing Admin Dashboard and manage Notices, Events, and Gallery items.",
+        "summary": "Add backend update APIs for notices and events so an admin can modify existing records (not only create/delete). Specifically, implement functions to update a Notice by id (category, title, content, date) and update an Event by id (eventType, title, description, date, isPast), enforcing the same designated-admin authorization used by create/delete.",
         "status": "unknown",
         "plannedFiles": [],
         "matchedFiles": []
       },
       {
         "id": "REQ-2",
-        "summary": "Add an image file upload option in the Admin Dashboard Gallery management UI so admins can choose a local image file and have it saved as the gallery item image (store the image in the existing `imageUrl` field using a Data URL string, with basic client-side validation and clear English error messages).",
+        "summary": "Add React Query mutation hooks for updating notices and events, and ensure query invalidation correctly refreshes all notices and both upcoming/past event lists after create/update/delete operations.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/hooks/useQueries.ts"
+        ],
+        "matchedFiles": [
+          "frontend/src/hooks/useQueries.ts"
+        ]
+      },
+      {
+        "id": "REQ-3",
+        "summary": "Provide an in-app UI to edit existing notices and events from the admin experience. Add an Edit action for each notice/event row that opens a dialog pre-filled with the current values, allows changes, and saves via the update mutations with clear success/error toasts.",
         "status": "implemented",
         "plannedFiles": [
           "frontend/src/pages/AdminPage.tsx",
-          "frontend/src/lib/gallery.ts"
+          "frontend/src/hooks/useQueries.ts"
         ],
         "matchedFiles": [
           "frontend/src/pages/AdminPage.tsx",
-          "frontend/src/lib/gallery.ts"
+          "frontend/src/hooks/useQueries.ts"
         ]
       }
     ]
   },
   "changedFiles": [
     "backend/main.mo",
-    "backend/migration.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/lib/gallery.ts",
+    "frontend/src/backend.d.ts",
+    "frontend/src/backend.ts",
+    "frontend/src/declarations/backend.did.d.ts",
+    "frontend/src/declarations/backend.did.js",
+    "frontend/src/hooks/useQueries.ts",
     "frontend/src/pages/AdminPage.tsx",
     "project_state.json",
     "scratch/component-selection.json",

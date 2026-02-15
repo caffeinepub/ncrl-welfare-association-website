@@ -115,6 +115,7 @@ export interface GalleryItem {
 }
 export interface UserProfile {
     name: string;
+    email: string;
 }
 export enum EventType {
     culturalProgram = "culturalProgram",
@@ -158,11 +159,14 @@ export interface backendInterface {
     getPastEvents(): Promise<Array<Event>>;
     getUpcomingEvents(): Promise<Array<Event>>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
+    initializeBootstrapToken(adminBootstrapToken: string): Promise<void>;
     isCallerAdmin(): Promise<boolean>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     submitContactForm(name: string, email: string, message: string, date: string): Promise<bigint>;
     submitMembershipRegistration(name: string, address: string, email: string, phone: string, membershipType: MembershipType): Promise<bigint>;
     submitPayment(memberId: bigint, amount: bigint, paymentType: PaymentType, date: string): Promise<bigint>;
+    updateEvent(id: bigint, eventType: EventType, title: string, description: string, date: string, isPast: boolean): Promise<void>;
+    updateNotice(id: bigint, category: NoticeCategory, title: string, content: string, date: string): Promise<void>;
 }
 import type { Event as _Event, EventType as _EventType, MembershipType as _MembershipType, Notice as _Notice, NoticeCategory as _NoticeCategory, PaymentType as _PaymentType, Time as _Time, UserProfile as _UserProfile, UserRole as _UserRole } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
@@ -413,6 +417,20 @@ export class Backend implements backendInterface {
             return from_candid_opt_n7(this._uploadFile, this._downloadFile, result);
         }
     }
+    async initializeBootstrapToken(arg0: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.initializeBootstrapToken(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.initializeBootstrapToken(arg0);
+            return result;
+        }
+    }
     async isCallerAdmin(): Promise<boolean> {
         if (this.processError) {
             try {
@@ -480,6 +498,34 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.submitPayment(arg0, arg1, to_candid_PaymentType_n22(this._uploadFile, this._downloadFile, arg2), arg3);
+            return result;
+        }
+    }
+    async updateEvent(arg0: bigint, arg1: EventType, arg2: string, arg3: string, arg4: string, arg5: boolean): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.updateEvent(arg0, to_candid_EventType_n3(this._uploadFile, this._downloadFile, arg1), arg2, arg3, arg4, arg5);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.updateEvent(arg0, to_candid_EventType_n3(this._uploadFile, this._downloadFile, arg1), arg2, arg3, arg4, arg5);
+            return result;
+        }
+    }
+    async updateNotice(arg0: bigint, arg1: NoticeCategory, arg2: string, arg3: string, arg4: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.updateNotice(arg0, to_candid_NoticeCategory_n5(this._uploadFile, this._downloadFile, arg1), arg2, arg3, arg4);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.updateNotice(arg0, to_candid_NoticeCategory_n5(this._uploadFile, this._downloadFile, arg1), arg2, arg3, arg4);
             return result;
         }
     }

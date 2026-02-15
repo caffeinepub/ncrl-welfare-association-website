@@ -8,9 +8,9 @@ import Principal "mo:core/Principal";
 
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
-import Migration "migration";
 
-(with migration = Migration.run)
+// IMPORTANT: Actor must persist state between upgrades and use correct with clause
+
 actor {
   type Notice = {
     id : Nat;
@@ -88,10 +88,8 @@ actor {
 
   public type UserProfile = {
     name : Text;
+    email : Text;
   };
-
-  let accessControlState = AccessControl.initState(); // Only reinitialize when no persistent state is needed.
-  include MixinAuthorization(accessControlState);
 
   var nextNoticeId = 1;
   var nextEventId = 1;
@@ -102,60 +100,79 @@ actor {
 
   let notices = Map.empty<Nat, Notice>();
   let events = Map.empty<Nat, Event>();
-  var galleryItems = Map.empty<Nat, GalleryItem>();
+  let galleryItems = Map.empty<Nat, GalleryItem>();
   let memberships = Map.empty<Nat, MembershipRegistration>();
   let payments = Map.empty<Nat, Payment>();
   let contactSubmissions = Map.empty<Nat, ContactFormSubmission>();
   let userProfiles = Map.empty<Principal, UserProfile>();
 
+  let accessControlState = AccessControl.initState();
+  include MixinAuthorization(accessControlState);
+
   let defaultGalleryItems : [GalleryItem] = [
     {
       id = 1;
       title = "Community Garden";
-      imageUrl = "/assets/generated/gallery-garden.png";
+      imageUrl = "/assets/generated/ncrl-gallery-01.dim_1600x1066.png";
       description = "A beautiful view of our community garden in full bloom.";
     },
     {
       id = 2;
       title = "Annual Picnic";
-      imageUrl = "/assets/generated/gallery-picnic.png";
+      imageUrl = "/assets/generated/ncrl-gallery-02.dim_1600x1066.png";
       description = "Family members enjoying games and food at the annual picnic.";
     },
     {
       id = 3;
       title = "Welfare Drive";
-      imageUrl = "/assets/generated/gallery-drive.png";
+      imageUrl = "/assets/generated/ncrl-gallery-03.dim_1600x1066.png";
       description = "Volunteers organizing donated goods for local families.";
     },
     {
       id = 4;
       title = "Cultural Night";
-      imageUrl = "/assets/generated/gallery-culture.png";
+      imageUrl = "/assets/generated/ncrl-gallery-04.dim_1600x1066.png";
       description = "A snapshot of performances during Cultural Night celebrations.";
     },
     {
       id = 5;
       title = "Clean-Up Day";
-      imageUrl = "/assets/generated/gallery-cleanup.png";
+      imageUrl = "/assets/generated/ncrl-gallery-05.dim_1600x1066.png";
       description = "Residents participating in neighborhood clean-up efforts.";
     },
     {
       id = 6;
       title = "Community Center";
-      imageUrl = "/assets/generated/gallery-community.png";
+      imageUrl = "/assets/generated/ncrl-gallery-06.dim_1600x1066.png";
       description = "The new community center now available for local events.";
     },
   ];
 
+  func isAdminByEmail(caller : Principal) : Bool {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      return false;
+    };
+    switch (userProfiles.get(caller)) {
+      case (null) { false };
+      case (?profile) {
+        "sadashivn.a@gmail.com" == profile.email;
+      };
+    };
+  };
+
+  public shared ({ caller }) func initializeBootstrapToken(adminBootstrapToken : Text) : async () {
+    AccessControl.initialize(accessControlState, caller, adminBootstrapToken, adminBootstrapToken);
+  };
+
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can access profiles");
+      Runtime.trap("Unauthorized: Only users can save profiles");
     };
     userProfiles.get(caller);
   };
 
   public query ({ caller }) func getUserProfile(user : Principal) : async ?UserProfile {
-    if (user != caller and not AccessControl.isAdmin(accessControlState, caller)) {
+    if (user != caller and not isAdminByEmail(caller)) {
       Runtime.trap("Unauthorized: Can only view your own profile");
     };
     userProfiles.get(user);
@@ -169,8 +186,8 @@ actor {
   };
 
   public shared ({ caller }) func createNotice(category : NoticeCategory, title : Text, content : Text, date : Text) : async Nat {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
-      Runtime.trap("Unauthorized: Only admins can create notices");
+    if (not isAdminByEmail(caller)) {
+      Runtime.trap("Unauthorized: Only the designated admin can create notices");
     };
 
     let newNotice : Notice = {
@@ -184,6 +201,29 @@ actor {
     notices.add(nextNoticeId, newNotice);
     nextNoticeId += 1;
     newNotice.id;
+  };
+
+  public shared ({ caller }) func updateNotice(id : Nat, category : NoticeCategory, title : Text, content : Text, date : Text) : async () {
+    if (not isAdminByEmail(caller)) {
+      Runtime.trap("Unauthorized: Only the designated admin can update notices");
+    };
+
+    switch (notices.get(id)) {
+      case (null) {
+        Runtime.trap("Notice does not exist");
+      };
+      case (?existingNotice) {
+        let updatedNotice : Notice = {
+          id;
+          category;
+          title;
+          content;
+          date;
+          timestamp = existingNotice.timestamp;
+        };
+        notices.add(id, updatedNotice);
+      };
+    };
   };
 
   public query func getNoticesByCategory(category : NoticeCategory) : async [Notice] {
@@ -206,8 +246,8 @@ actor {
   };
 
   public shared ({ caller }) func deleteNotice(id : Nat) : async () {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
-      Runtime.trap("Unauthorized: Only admins can delete notices");
+    if (not isAdminByEmail(caller)) {
+      Runtime.trap("Unauthorized: Only the designated admin can delete notices");
     };
 
     if (notices.containsKey(id)) {
@@ -218,8 +258,8 @@ actor {
   };
 
   public shared ({ caller }) func createEvent(eventType : EventType, title : Text, description : Text, date : Text, isPast : Bool) : async Nat {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
-      Runtime.trap("Unauthorized: Only admins can create events");
+    if (not isAdminByEmail(caller)) {
+      Runtime.trap("Unauthorized: Only the designated admin can create events");
     };
 
     let newEvent : Event = {
@@ -236,6 +276,30 @@ actor {
     newEvent.id;
   };
 
+  public shared ({ caller }) func updateEvent(id : Nat, eventType : EventType, title : Text, description : Text, date : Text, isPast : Bool) : async () {
+    if (not isAdminByEmail(caller)) {
+      Runtime.trap("Unauthorized: Only the designated admin can update events");
+    };
+
+    switch (events.get(id)) {
+      case (null) {
+        Runtime.trap("Event does not exist");
+      };
+      case (?existingEvent) {
+        let updatedEvent : Event = {
+          id;
+          eventType;
+          title;
+          description;
+          date;
+          timestamp = existingEvent.timestamp;
+          isPast;
+        };
+        events.add(id, updatedEvent);
+      };
+    };
+  };
+
   public query func getUpcomingEvents() : async [Event] {
     events.values().filter(func(e) { not e.isPast }).toArray();
   };
@@ -245,8 +309,8 @@ actor {
   };
 
   public shared ({ caller }) func deleteEvent(id : Nat) : async () {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
-      Runtime.trap("Unauthorized: Only admins can delete events");
+    if (not isAdminByEmail(caller)) {
+      Runtime.trap("Unauthorized: Only the designated admin can delete events");
     };
 
     if (events.containsKey(id)) {
@@ -257,8 +321,8 @@ actor {
   };
 
   public shared ({ caller }) func addGalleryItem(title : Text, imageUrl : Text, description : Text) : async Nat {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
-      Runtime.trap("Unauthorized: Only admins can add gallery items");
+    if (not isAdminByEmail(caller)) {
+      Runtime.trap("Unauthorized: Only the designated admin can add gallery items");
     };
 
     let newItem : GalleryItem = {
@@ -282,8 +346,8 @@ actor {
   };
 
   public shared ({ caller }) func deleteGalleryItem(id : Nat) : async () {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
-      Runtime.trap("Unauthorized: Only admins can delete gallery items");
+    if (not isAdminByEmail(caller)) {
+      Runtime.trap("Unauthorized: Only the designated admin can delete gallery items");
     };
 
     if (galleryItems.containsKey(id)) {

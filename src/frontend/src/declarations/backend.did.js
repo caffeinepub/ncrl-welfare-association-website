@@ -24,7 +24,10 @@ export const NoticeCategory = IDL.Variant({
   'waterSupply' : IDL.Null,
   'general' : IDL.Null,
 });
-export const UserProfile = IDL.Record({ 'name' : IDL.Text });
+export const UserProfile = IDL.Record({
+  'name' : IDL.Text,
+  'email' : IDL.Text,
+});
 export const GalleryItem = IDL.Record({
   'id' : IDL.Nat,
   'title' : IDL.Text,
@@ -92,6 +95,7 @@ export const idlService = IDL.Service({
       [IDL.Opt(UserProfile)],
       ['query'],
     ),
+  'initializeBootstrapToken' : IDL.Func([IDL.Text], [], []),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
   'submitContactForm' : IDL.Func(
@@ -107,6 +111,16 @@ export const idlService = IDL.Service({
   'submitPayment' : IDL.Func(
       [IDL.Nat, IDL.Nat, PaymentType, IDL.Text],
       [IDL.Nat],
+      [],
+    ),
+  'updateEvent' : IDL.Func(
+      [IDL.Nat, EventType, IDL.Text, IDL.Text, IDL.Text, IDL.Bool],
+      [],
+      [],
+    ),
+  'updateNotice' : IDL.Func(
+      [IDL.Nat, NoticeCategory, IDL.Text, IDL.Text, IDL.Text],
+      [],
       [],
     ),
 });
@@ -130,7 +144,7 @@ export const idlFactory = ({ IDL }) => {
     'waterSupply' : IDL.Null,
     'general' : IDL.Null,
   });
-  const UserProfile = IDL.Record({ 'name' : IDL.Text });
+  const UserProfile = IDL.Record({ 'name' : IDL.Text, 'email' : IDL.Text });
   const GalleryItem = IDL.Record({
     'id' : IDL.Nat,
     'title' : IDL.Text,
@@ -198,6 +212,7 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Opt(UserProfile)],
         ['query'],
       ),
+    'initializeBootstrapToken' : IDL.Func([IDL.Text], [], []),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
     'submitContactForm' : IDL.Func(
@@ -213,6 +228,16 @@ export const idlFactory = ({ IDL }) => {
     'submitPayment' : IDL.Func(
         [IDL.Nat, IDL.Nat, PaymentType, IDL.Text],
         [IDL.Nat],
+        [],
+      ),
+    'updateEvent' : IDL.Func(
+        [IDL.Nat, EventType, IDL.Text, IDL.Text, IDL.Text, IDL.Bool],
+        [],
+        [],
+      ),
+    'updateNotice' : IDL.Func(
+        [IDL.Nat, NoticeCategory, IDL.Text, IDL.Text, IDL.Text],
+        [],
         [],
       ),
   });

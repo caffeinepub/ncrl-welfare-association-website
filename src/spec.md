@@ -1,11 +1,11 @@
 # Specification
 
 ## Summary
-**Goal:** Enable the provided Internet Identity Principal to access the Admin Dashboard and allow admins to upload local image files when creating Gallery items.
+**Goal:** Allow admins to edit/update existing notices and events (not just create/delete), end-to-end across backend APIs, frontend data hooks, and the admin UI.
 
 **Planned changes:**
-- Grant admin permissions to Internet Identity Principal `bivov-zoivv-elizs-vxwob-drkj7-3idkg-ay4cf-tugyq-vy2rd-oretd-vae` so they can manage Notices, Events, and Gallery items without authorization errors.
-- Update the Admin Dashboard Gallery management form to support selecting a local image file, converting it to a Data URL, and storing it in the existing `imageUrl` field when adding a gallery item.
-- Add basic client-side validation for uploaded images (image type and reasonable size limit) with clear English error messages.
+- Add admin-gated backend update methods to modify an existing Notice by id (category, title, content, date) and an existing Event by id (eventType, title, description, date, isPast), with errors for missing ids consistent with current delete behavior.
+- Add React Query mutation hooks (`useUpdateNotice`, `useUpdateEvent`) and ensure query invalidation refreshes the notices list and both upcoming/past event lists after create/update/delete.
+- Add an Edit action in the admin notices/events tables that opens a pre-filled dialog, saves via the update mutations, shows success/error toasts, and updates the displayed lists accordingly (English UI text).
 
-**User-visible outcome:** The specified Principal can open `/admin` and manage Notices/Events/Gallery items, and admins can upload an image file for new Gallery items without pasting an external URL, with validation feedback when files are invalid.
+**User-visible outcome:** Admins can click Edit on a notice or event, adjust fields in a dialog, save changes, and immediately see updated notices and events (including moving events between Upcoming and Past when `isPast` changes).

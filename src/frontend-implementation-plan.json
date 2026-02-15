@@ -1,27 +1,44 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Admin Gallery image upload (Data URL) support",
+  "title": "Admin edit/update workflow for notices and events (frontend)",
   "requirements": [
     {
       "id": "REQ-2",
-      "summary": "Add image file upload to Admin Dashboard Gallery form, convert to Data URL for imageUrl, and ensure Gallery renders Data URLs with validation and clear errors.",
+      "summary": "Add React Query update mutations for notices/events and ensure invalidation refreshes notices and both upcoming/past event lists after any write operation.",
       "acceptanceCriteria": [
-        "In the Admin Dashboard > Gallery tab, the add-gallery-item form includes a file input (accepting common image types like PNG/JPG/WebP).",
-        "When an admin selects an image file, the UI converts it to a Data URL and uses it as the `imageUrl` when calling addGalleryItem, without requiring the admin to manually paste a URL.",
-        "If the selected file is not an image or exceeds a reasonable size limit, the UI blocks submission and shows an English error message explaining why.",
-        "After adding a gallery item with an uploaded image, the Gallery page displays the new item and renders the uploaded image correctly using the stored Data URL."
+        "`useQueries.ts` includes `useUpdateNotice` and `useUpdateEvent` hooks that call the new backend update APIs and normalize backend errors using the existing `normalizeBackendError` helper",
+        "After a notice is created/updated/deleted, the notices list shown in the UI refreshes without a full page reload",
+        "After an event is created/updated/deleted, both Upcoming and Past event lists refresh correctly (i.e., invalidation targets the actual query keys used for `useUpcomingEvents` and `usePastEvents`)"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Add `useUpdateNotice` and `useUpdateEvent` React Query mutation hooks calling `actor.updateNotice` / `actor.updateEvent` and throwing normalized errors via `normalizeBackendError`. Update existing event create/delete invalidation to explicitly invalidate the query keys used by `useUpcomingEvents` (['events','upcoming']) and `usePastEvents` (['events','past']), and ensure notice create/delete + new update mutations invalidate ['notices'] so UI refreshes without reload."
+        }
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "summary": "Add admin UI Edit actions for notices and events with pre-filled dialogs, saving via update mutations and showing English success/error toasts.",
+      "acceptanceCriteria": [
+        "In Admin page notice management, each existing notice row has an Edit control that opens a dialog with fields pre-populated from the selected notice",
+        "Saving an edited notice updates the backend, closes the dialog, shows a success toast, and the notices table reflects the updated values",
+        "In Admin page event management, each existing event row has an Edit control that opens a dialog with fields pre-populated from the selected event (including isPast)",
+        "Saving an edited event updates the backend, closes the dialog, shows a success toast, and the events table reflects the updated values; if isPast changes, the event appears in the correct list (Upcoming vs Past) after refresh",
+        "User-facing text for edit/update flows is in English"
       ],
       "file_operations": [
         {
           "path": "frontend/src/pages/AdminPage.tsx",
           "operation": "modify",
-          "description": "Update the existing Gallery admin UI to include an image file input (accept=\"image/png,image/jpeg,image/webp,image/gif\"), read the selected file via FileReader into a Data URL string, and submit that Data URL as `imageUrl` in the existing useAddGalleryItem mutation. Add basic client-side validation (must be an image MIME type; enforce a reasonable max file size such as 2–5MB; handle empty selection) and show clear English error messages (e.g., via existing toast usage). Optionally show a small preview of the selected image and/or the computed Data URL state to confirm selection. Use existing shadcn-ui form components already in the file (Input/Label/Button/Card/etc.) to keep UI consistent. Verify the component's usage instructions before implementing."
+          "description": "Implement edit/update workflow in the Admin notices and events management tables: add an Edit action per row that opens a pre-filled dialog, allows updating category/title/content/date for notices and eventType/title/description/date/isPast for events, and saves via new update mutation hooks with success/error toasts (English). Use existing shadcn/ui components (e.g., Dialog, Button, Input, Textarea, Select, Table; and a boolean control like Checkbox/Switch if already available) to build the dialogs—do not edit any files under `frontend/src/components/ui`. Verify the component's usage instructions before implementing."
         },
         {
-          "path": "frontend/src/lib/gallery.ts",
+          "path": "frontend/src/hooks/useQueries.ts",
           "operation": "modify",
-          "description": "Extend gallery item validation to treat Data URLs as valid image sources by allowing `imageUrl` values starting with \"data:image/\" (in addition to existing http/https and leading \"/\" paths). This ensures newly uploaded Data URL images are not filtered out by processing/fallback logic and will render on the Gallery page."
+          "description": "Wire the AdminPage edit dialogs to the new `useUpdateNotice` and `useUpdateEvent` hooks, ensuring their onSuccess invalidation triggers a refresh so updated rows/lists reflect changes (including moving an event between Upcoming and Past when `isPast` changes)."
         }
       ]
     }

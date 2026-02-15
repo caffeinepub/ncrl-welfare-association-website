@@ -1,20 +1,28 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Website project with editable content (e.g., About Us/Bylaws, gallery) and a need for a way to upload images and manage Notices and Events without direct admin dashboard access.",
+  "summary": "App includes admin-gated content management; user wants an in-app way to update/manage notices and events via an admin page/workflow.",
   "architectural_notes": [
-    "Users without the original creator identity cannot access the admin dashboard; site updates/content management may need an alternative workflow or delegated admin access."
+    "Admin features are gated by matching the logged-in/profile email to a configured authorized admin email."
   ],
   "known_issues": [
-    "User receives 'Access Denied' when trying to access the admin dashboard with their Internet Identity principal (not an admin identity)."
+    "Admin email update/build attempt failed to implement; admin controls may remain inaccessible until authorization logic is updated."
   ],
   "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-add-an-image-file-upload-option-in-the-admin-dashboard-gallery-management-ui-so-admins-can-choose-a-local-image-file-and-have-it-saved-as-the-gallery-item-image-store-the-image-in-the-existing-imageurl-field-using-a-data-url-string-with-basic-client-side-validation-and-clear-english-error-messages",
-      "title": "Add an image file upload option in the Admin Dashboard Gallery management UI so admins can choose a local image file and have it saved as the gallery item image (store the image in the existing `imageUrl` field using a Data URL string, with basic client-side validation and clear English error messages).",
+      "id": "feature-add-react-query-mutation-hooks-for-updating-notices-and-events-and-ensure-query-invalidation-correctly-refreshes-all-notices-and-both-upcoming-past-event-lists-after-create-update-delete-operations",
+      "title": "Add React Query mutation hooks for updating notices and events, and ensure query invalidation correctly refreshes all notices and both upcoming/past event lists after create/update/delete operations.",
       "reqIds": [
         "REQ-2"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-provide-an-in-app-ui-to-edit-existing-notices-and-events-from-the-admin-experience-add-an-edit-action-for-each-notice-event-row-that-opens-a-dialog-pre-filled-with-the-current-values-allows-changes-and-saves-via-the-update-mutations-with-clear-success-error-toasts",
+      "title": "Provide an in-app UI to edit existing notices and events from the admin experience. Add an Edit action for each notice/event row that opens a dialog pre-filled with the current values, allows changes, and saves via the update mutations with clear success/error toasts.",
+      "reqIds": [
+        "REQ-3"
       ],
       "version": 1
     }
@@ -22,32 +30,26 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Provide a way to upload/manage images for the site (e.g., gallery)",
+      "summary": "Provide an admin workflow/page to create, edit, and update notices and events in-app (not just view a permission message).",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-2",
-      "summary": "Add/update a Notices section with ability to post and manage notices",
+      "summary": "Support configuring/setting the authorized admin email (e.g., sadashivn.a@gmail.com) so admin features become available after login/profile update.",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-3",
-      "summary": "Add/update an Events section with ability to post and manage events",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-4",
-      "summary": "Grant admin permissions to the Internet Identity Principal `bivov-zoivv-elizs-vxwob-drkj7-3idkg-ay4cf-tugyq-vy2rd-oretd-vae` so this user can access the existing Admin Dashboard and manage Notices, Events, and Gallery items.",
+      "summary": "Add backend update APIs for notices and events so an admin can modify existing records (not only create/delete). Specifically, implement functions to update a Notice by id (category, title, content, date) and update an Event by id (eventType, title, description, date, isPast), enforcing the same designated-admin authorization used by create/delete.",
       "reqIds": [
         "REQ-1"
       ],
       "status": "pending"
     }
   ],
-  "projectName": "Grant admin access to provided Principal and add gallery image upload for Notices/Events management",
+  "projectName": "Add edit/update workflow for notices and events",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

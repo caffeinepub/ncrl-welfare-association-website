@@ -4,20 +4,22 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useLatestNotices, useUpcomingEventsPreview, useContactInfo, useGalleryItems } from '../hooks/useQueries';
+import { useLatestNotices, useUpcomingEvents, useContactInfo, useGalleryItems } from '../hooks/useQueries';
 import { getNoticeCategoryLabel } from '../lib/notices';
 import { getEventTypeLabel } from '../lib/events';
 import { getGalleryItemsWithFallback } from '../lib/gallery';
+import ImageWithFallback from '../components/gallery/ImageWithFallback';
 import ContactForm from '../components/forms/ContactForm';
 
 export default function HomePage() {
   const { data: latestNotices, isLoading: noticesLoading } = useLatestNotices(5);
-  const { data: upcomingEvents, isLoading: eventsLoading } = useUpcomingEventsPreview(3);
+  const { data: upcomingEvents, isLoading: eventsLoading } = useUpcomingEvents();
   const { data: contactInfo, isLoading: contactLoading } = useContactInfo();
   const { data: galleryItems, isLoading: galleryLoading } = useGalleryItems();
 
   const displayGallery = getGalleryItemsWithFallback(galleryItems);
   const galleryPreview = displayGallery.slice(0, 6);
+  const eventsPreview = upcomingEvents?.slice(0, 3) || [];
 
   return (
     <div className="flex flex-col">
@@ -194,26 +196,28 @@ export default function HomePage() {
                 </CardHeader>
                 <CardContent>
                   <Skeleton className="h-4 w-full" />
-                  <Skeleton className="mt-2 h-4 w-2/3" />
                 </CardContent>
               </Card>
             ))}
           </div>
-        ) : upcomingEvents && upcomingEvents.length > 0 ? (
+        ) : eventsPreview && eventsPreview.length > 0 ? (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {upcomingEvents.map((event) => (
+            {eventsPreview.map((event) => (
               <Card key={Number(event.id)} className="transition-all hover:shadow-lg hover:border-ncrl-emerald">
                 <CardHeader>
-                  <div className="mb-2 flex items-center justify-between">
-                    <Badge className="bg-ncrl-emerald text-white">
+                  <div className="mb-2 flex items-center gap-2">
+                    <Badge variant="outline" className="border-ncrl-emerald text-ncrl-emerald">
                       {getEventTypeLabel(event.eventType)}
                     </Badge>
-                    <span className="text-xs text-muted-foreground">{event.date}</span>
                   </div>
                   <CardTitle className="text-lg">{event.title}</CardTitle>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Calendar className="h-4 w-4" />
+                    {event.date}
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="line-clamp-3 text-sm text-muted-foreground">{event.description}</p>
+                  <p className="line-clamp-2 text-sm text-muted-foreground">{event.description}</p>
                 </CardContent>
               </Card>
             ))}
@@ -235,7 +239,7 @@ export default function HomePage() {
             <h2 className="text-3xl font-bold text-ncrl-blue">Gallery</h2>
             <Button asChild variant="outline" className="border-ncrl-emerald text-ncrl-emerald hover:bg-ncrl-emerald/10">
               <Link to="/gallery">
-                View All Photos <ArrowRight className="ml-2 h-4 w-4" />
+                View Full Gallery <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
           </div>
@@ -243,27 +247,33 @@ export default function HomePage() {
           {galleryLoading ? (
             <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
               {[1, 2, 3, 4, 5, 6].map((i) => (
-                <Skeleton key={i} className="aspect-square w-full rounded-lg" />
+                <Skeleton key={i} className="aspect-square w-full" />
+              ))}
+            </div>
+          ) : galleryPreview.length > 0 ? (
+            <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
+              {galleryPreview.map((item) => (
+                <div key={item.id} className="group relative aspect-square overflow-hidden rounded-lg">
+                  <ImageWithFallback
+                    src={item.imageUrl}
+                    alt={item.title}
+                    className="h-full w-full object-cover transition-transform group-hover:scale-110"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 transition-opacity group-hover:opacity-100">
+                    <div className="absolute bottom-0 left-0 right-0 p-3">
+                      <p className="text-sm font-medium text-white">{item.title}</p>
+                    </div>
+                  </div>
+                </div>
               ))}
             </div>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
-              {galleryPreview.map((item) => (
-                <Link
-                  key={Number(item.id)}
-                  to="/gallery"
-                  className="group relative aspect-square overflow-hidden rounded-lg border border-border/50 transition-all hover:border-ncrl-emerald hover:shadow-lg"
-                >
-                  <img
-                    src={item.imageUrl}
-                    alt={item.description || item.title}
-                    className="h-full w-full object-cover transition-transform group-hover:scale-105"
-                    loading="lazy"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
-                </Link>
-              ))}
-            </div>
+            <Card>
+              <CardContent className="py-12 text-center">
+                <Image className="mx-auto mb-4 h-12 w-12 text-muted-foreground/50" />
+                <p className="text-muted-foreground">No gallery items available.</p>
+              </CardContent>
+            </Card>
           )}
         </div>
       </section>
@@ -279,45 +289,66 @@ export default function HomePage() {
 
             {contactLoading ? (
               <div className="space-y-4">
-                <Skeleton className="h-6 w-3/4" />
-                <Skeleton className="h-6 w-2/3" />
-                <Skeleton className="h-6 w-1/2" />
+                <Skeleton className="h-20 w-full" />
+                <Skeleton className="h-20 w-full" />
+                <Skeleton className="h-20 w-full" />
               </div>
             ) : (
-              <div className="space-y-4">
-                <div className="flex items-start gap-3">
-                  <MapPin className="mt-1 h-5 w-5 text-ncrl-emerald" />
-                  <div>
-                    <h3 className="font-semibold text-ncrl-blue">Address</h3>
-                    <p className="text-muted-foreground">
-                      {contactInfo?.address || '123 Main St, City, Country'}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Phone className="mt-1 h-5 w-5 text-ncrl-emerald" />
-                  <div>
-                    <h3 className="font-semibold text-ncrl-blue">Phone</h3>
-                    <p className="text-muted-foreground">
-                      {contactInfo?.phone || '+1234567890'}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Mail className="mt-1 h-5 w-5 text-ncrl-emerald" />
-                  <div>
-                    <h3 className="font-semibold text-ncrl-blue">Email</h3>
-                    <p className="text-muted-foreground">
-                      {contactInfo?.email || 'info@association.com'}
-                    </p>
-                  </div>
-                </div>
+              <div className="space-y-6">
+                <Card>
+                  <CardContent className="flex items-start gap-4 p-6">
+                    <div className="rounded-full bg-ncrl-emerald/10 p-3">
+                      <MapPin className="h-6 w-6 text-ncrl-emerald" />
+                    </div>
+                    <div>
+                      <h3 className="mb-1 font-semibold">Address</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {contactInfo?.address || '123 Main St, City, Country'}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="flex items-start gap-4 p-6">
+                    <div className="rounded-full bg-ncrl-emerald/10 p-3">
+                      <Phone className="h-6 w-6 text-ncrl-emerald" />
+                    </div>
+                    <div>
+                      <h3 className="mb-1 font-semibold">Phone</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {contactInfo?.phone || '+1234567890'}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="flex items-start gap-4 p-6">
+                    <div className="rounded-full bg-ncrl-emerald/10 p-3">
+                      <Mail className="h-6 w-6 text-ncrl-emerald" />
+                    </div>
+                    <div>
+                      <h3 className="mb-1 font-semibold">Email</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {contactInfo?.email || 'info@association.com'}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             )}
           </div>
 
           <div>
-            <ContactForm />
+            <Card>
+              <CardHeader>
+                <CardTitle>Send us a Message</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ContactForm />
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>

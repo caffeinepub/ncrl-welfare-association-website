@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useSubmitContact } from '../../hooks/useQueries';
+import { useSubmitContactForm } from '../../hooks/useQueries';
 import { CheckCircle2, Loader2 } from 'lucide-react';
 
 interface ContactFormData {
@@ -18,16 +18,18 @@ interface ContactFormData {
 export default function ContactForm() {
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const { register, handleSubmit, formState: { errors }, reset } = useForm<ContactFormData>();
-  const submitContact = useSubmitContact();
+  const submitContact = useSubmitContactForm();
 
   const onSubmit = async (data: ContactFormData) => {
     try {
       setSubmitStatus('idle');
       const message = `Subject: ${data.subject}\n\n${data.message}`;
+      const date = new Date().toISOString().split('T')[0];
       await submitContact.mutateAsync({
         name: data.name,
         email: data.email,
         message,
+        date,
       });
       setSubmitStatus('success');
       reset();

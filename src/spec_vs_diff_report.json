@@ -1,58 +1,40 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-15T03:56:24.285Z",
-  "summary": "REQ-1 (grant admin to a specific Principal) and REQ-2 (add Gallery image file upload in Admin UI with validation + Data URL storage) are not clearly implemented in the provided diff summary. The diff also includes several unrelated frontend and backend changes (e.g., new migration module, gallery URL validation utilities, various site page/content changes) that were not requested.",
+  "generatedAt": "2026-02-15T10:05:39.127Z",
+  "summary": "Diff adds frontend mutation hook scaffolding for updating notices (and imports for update hooks in AdminPage) plus various admin/profile-related UI/logic changes. However, due to truncation and limited visible code, key parts of the requested end-to-end edit/update workflow (backend update APIs, correct event list invalidation, and admin edit dialogs) cannot be confirmed from the provided diff summary.",
   "missing_requirements": [
     {
       "id": "REQ-1",
-      "requirement": "Grant admin permissions to the Internet Identity Principal `bivov-zoivv-elizs-vxwob-drkj7-3idkg-ay4cf-tugyq-vy2rd-oretd-vae` so this user can access the existing Admin Dashboard and manage Notices, Events, and Gallery items.",
-      "reason": "The diff summary for `backend/main.mo` shows access control state initialization and authorization checks, but does not show any logic that explicitly grants admin rights to the specified Principal (e.g., adding it to an admin list/role on init or migration). Because the file is truncated and no explicit Principal string appears in the shown excerpt, the requirement cannot be confirmed as implemented.",
+      "requirement": "Backend update APIs for Notice and Event (admin-gated), persisting updates and returning/trapping with existing delete-consistent errors when id does not exist; Unauthorized for non-admin.",
+      "reason": "The diff excerpt of backend/main.mo does not show any new updateNotice/updateEvent functions or their admin checks/error behavior; the relevant section is truncated before any such methods appear.",
       "evidence": [
-        "backend/main.mo (truncated)",
-        "backend/migration.mo"
+        "backend/main.mo (truncated; no updateNotice/updateEvent shown)"
       ]
     },
     {
       "id": "REQ-2",
-      "requirement": "Add an image file upload option in the Admin Dashboard Gallery management UI that converts a selected image to a Data URL and uses it as `imageUrl` when calling addGalleryItem, with client-side validation (type/size) and clear English error messages.",
-      "reason": "The shown `AdminPage.tsx` excerpt does not include any file input, FileReader/Data URL conversion, or size/type validation logic. The only related change shown is `frontend/src/lib/gallery.ts` accepting `data:image/` URLs during validation, which is insufficient to meet the UI upload/validation requirements.",
+      "requirement": "Ensure query invalidation refreshes all notices and both upcoming/past event lists after create/update/delete operations, targeting the actual query keys used by useUpcomingEvents and usePastEvents.",
+      "reason": "The visible portion of useQueries.ts shows useUpdateNotice invalidating only ['notices']. The required event invalidation behavior (and invalidation after create/delete for events) is not verifiable from the truncated diff; the updateEvent hook and event-related invalidations are not shown.",
       "evidence": [
-        "frontend/src/pages/AdminPage.tsx (truncated)",
-        "frontend/src/lib/gallery.ts"
-      ]
-    }
-  ],
-  "hallucinated_features": [
-    {
-      "description": "Added a backend migration module and wired actor migration scaffolding.",
-      "reason": "BuildRequest constraints require a single Motoko actor in `backend/main.mo` and do not request adding migration infrastructure. The diff adds `backend/migration.mo` and references it from `backend/main.mo`.",
-      "evidence": [
-        "backend/migration.mo",
-        "backend/main.mo (truncated)"
+        "frontend/src/hooks/useQueries.ts (truncated; useUpdateNotice onSuccess invalidates only ['notices']; useUpdateEvent not shown)"
       ]
     },
     {
-      "description": "Added gallery item normalization/filtering utilities and changed default gallery items/URL validation to allow `data:image/` and other URL formats.",
-      "reason": "REQ-2 asks for an Admin Dashboard file upload UI with Data URL conversion and validation; it does not request adding gallery processing utilities, changing default gallery assets, or filtering logic for invalid items.",
+      "id": "REQ-3",
+      "requirement": "Admin UI: Edit action per notice/event row opening a pre-filled dialog; save via update mutations; success/error toasts; table refresh reflects edits and moves events between Upcoming/Past when isPast changes.",
+      "reason": "AdminPage.tsx is heavily truncated; while it imports useUpdateNotice/useUpdateEvent and an Edit icon, the diff summary does not provide evidence of per-row Edit controls, pre-filled edit dialogs, or save/toast flows for notices/events.",
       "evidence": [
-        "frontend/src/lib/gallery.ts"
-      ]
-    },
-    {
-      "description": "Multiple unrelated frontend page/content changes (e.g., Documents route removed, About page bylaws download section, contact page query hook changes, gallery lightbox enhancements, styling/tailwind changes).",
-      "reason": "These changes are not requested by REQ-1/REQ-2 and are outside the described scope (admin permission grant + gallery upload in admin UI).",
-      "evidence": [
-        "frontend-file-summaries.txt"
+        "frontend/src/pages/AdminPage.tsx (truncated; imports Edit and update hooks but edit-row/dialog implementation not shown)"
       ]
     }
   ],
-  "confidence": 0.74,
+  "hallucinated_features": [],
+  "confidence": 0.46,
   "changed_files": [
     "backend/main.mo",
-    "backend/migration.mo",
     "frontend-file-summaries.txt",
-    "frontend/src/lib/gallery.ts",
+    "frontend/src/hooks/useQueries.ts",
     "frontend/src/pages/AdminPage.tsx",
     "project_state.json"
   ]

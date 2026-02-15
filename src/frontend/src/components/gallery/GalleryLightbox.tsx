@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import ImageWithFallback from './ImageWithFallback';
 
 interface GalleryImage {
   src: string;
@@ -63,10 +64,11 @@ export default function GalleryLightbox({
               <ChevronLeft className="h-6 w-6" />
             </Button>
 
-            <img
+            <ImageWithFallback
               src={images[currentIndex].src}
               alt={images[currentIndex].alt}
               className="max-h-[80vh] w-auto object-contain"
+              loading="eager"
             />
 
             <Button

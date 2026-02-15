@@ -1,14 +1,20 @@
 import { useState } from 'react';
-import { Image } from 'lucide-react';
+import { Link } from '@tanstack/react-router';
+import { Image, Settings } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import GalleryLightbox from '../components/gallery/GalleryLightbox';
-import { useGalleryItems } from '../hooks/useQueries';
+import ImageWithFallback from '../components/gallery/ImageWithFallback';
+import { useGalleryItems, useIsCallerAdmin } from '../hooks/useQueries';
+import { useInternetIdentity } from '../hooks/useInternetIdentity';
 import { getGalleryItemsWithFallback } from '../lib/gallery';
 
 export default function GalleryPage() {
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
   const { data: galleryItems, isLoading, isError, error } = useGalleryItems();
+  const { identity } = useInternetIdentity();
+  const { data: isAdmin } = useIsCallerAdmin();
 
   const displayItems = getGalleryItemsWithFallback(galleryItems);
   const images = displayItems.map((item) => ({
@@ -16,13 +22,27 @@ export default function GalleryPage() {
     alt: item.description || item.title,
   }));
 
+  const showAdminCTA = !!identity && isAdmin === true;
+
   return (
     <div className="container py-12">
       <div className="mx-auto max-w-6xl">
-        <h1 className="mb-4 text-4xl font-bold text-ncrl-blue">Gallery</h1>
-        <p className="mb-8 text-lg text-muted-foreground">
-          Photos of community gatherings, development works, and cultural celebrations.
-        </p>
+        <div className="mb-8 flex items-start justify-between gap-4">
+          <div>
+            <h1 className="mb-4 text-4xl font-bold text-ncrl-blue">Gallery</h1>
+            <p className="text-lg text-muted-foreground">
+              Photos of community gatherings, development works, and cultural celebrations.
+            </p>
+          </div>
+          {showAdminCTA && (
+            <Link to="/admin" search={{ tab: 'gallery' }}>
+              <Button variant="outline" size="sm" className="shrink-0">
+                <Settings className="mr-2 h-4 w-4" />
+                Manage Gallery
+              </Button>
+            </Link>
+          )}
+        </div>
 
         {isLoading ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -48,7 +68,7 @@ export default function GalleryPage() {
                 onClick={() => setSelectedImageIndex(index)}
                 className="group relative aspect-[3/2] overflow-hidden rounded-lg border border-border/50 transition-all hover:border-ncrl-emerald hover:shadow-lg"
               >
-                <img
+                <ImageWithFallback
                   src={image.src}
                   alt={image.alt}
                   className="h-full w-full object-cover transition-transform group-hover:scale-105"

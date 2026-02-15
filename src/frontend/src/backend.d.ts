@@ -33,6 +33,7 @@ export interface GalleryItem {
 }
 export interface UserProfile {
     name: string;
+    email: string;
 }
 export enum EventType {
     culturalProgram = "culturalProgram",
@@ -75,9 +76,12 @@ export interface backendInterface {
     getPastEvents(): Promise<Array<Event>>;
     getUpcomingEvents(): Promise<Array<Event>>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
+    initializeBootstrapToken(adminBootstrapToken: string): Promise<void>;
     isCallerAdmin(): Promise<boolean>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     submitContactForm(name: string, email: string, message: string, date: string): Promise<bigint>;
     submitMembershipRegistration(name: string, address: string, email: string, phone: string, membershipType: MembershipType): Promise<bigint>;
     submitPayment(memberId: bigint, amount: bigint, paymentType: PaymentType, date: string): Promise<bigint>;
+    updateEvent(id: bigint, eventType: EventType, title: string, description: string, date: string, isPast: boolean): Promise<void>;
+    updateNotice(id: bigint, category: NoticeCategory, title: string, content: string, date: string): Promise<void>;
 }

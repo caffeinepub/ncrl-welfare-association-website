@@ -91,3 +91,8 @@ export function getGalleryItemsWithFallback(items: GalleryItem[] | undefined): G
   // If all items were filtered out as invalid, use defaults
   return processed.length > 0 ? processed : defaultGalleryItems;
 }
+
+/**
+ * Shared fallback image URL for broken/unreachable gallery images
+ */
+export const FALLBACK_IMAGE_URL = '/assets/generated/ncrl-gallery-01.dim_1600x1066.png';

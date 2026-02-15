@@ -1,56 +1,75 @@
 {
   "kind": "build_request",
-  "title": "Grant admin access to provided Principal and add gallery image upload for Notices/Events management",
-  "priority": "high",
+  "title": "Add edit/update workflow for notices and events",
+  "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Grant admin permissions to the Internet Identity Principal `bivov-zoivv-elizs-vxwob-drkj7-3idkg-ay4cf-tugyq-vy2rd-oretd-vae` so this user can access the existing Admin Dashboard and manage Notices, Events, and Gallery items.",
+      "text": "Add backend update APIs for notices and events so an admin can modify existing records (not only create/delete). Specifically, implement functions to update a Notice by id (category, title, content, date) and update an Event by id (eventType, title, description, date, isPast), enforcing the same designated-admin authorization used by create/delete.",
       "target": "backend",
       "source": {
         "messageIds": [
-          "msg-6"
+          "msg-1"
         ],
         "quotes": [
-          "I want to upload image and notices and events \nPrincipal id:\nbivov-zoivv-elizs-vxwob-drkj7-3idkg-ay4cf-tugyq-vy2rd-oretd-vae"
+          "Give me a way to update notices/events."
         ]
       },
       "acceptanceCriteria": [
-        "When logged in with Internet Identity Principal `bivov-zoivv-elizs-vxwob-drkj7-3idkg-ay4cf-tugyq-vy2rd-oretd-vae`, the /admin page no longer shows the \"Access Denied\" card and instead renders the Admin Dashboard tabs.",
-        "The Principal can successfully create and delete notices via createNotice/deleteNotice without receiving an \"Unauthorized\" trap.",
-        "The Principal can successfully create and delete events via createEvent/deleteEvent without receiving an \"Unauthorized\" trap.",
-        "The Principal can successfully add and delete gallery items via addGalleryItem/deleteGalleryItem without receiving an \"Unauthorized\" trap."
+        "Backend exposes an admin-gated method to update an existing notice by id and persists the updated fields in the notices map",
+        "Backend exposes an admin-gated method to update an existing event by id and persists the updated fields in the events map",
+        "If the id does not exist, the update method traps/returns an error consistent with existing delete behavior (e.g., \"Notice does not exist.\" / \"Event does not exist.\")",
+        "Non-admin callers receive an Unauthorized error consistent with existing admin checks"
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Add an image file upload option in the Admin Dashboard Gallery management UI so admins can choose a local image file and have it saved as the gallery item image (store the image in the existing `imageUrl` field using a Data URL string, with basic client-side validation and clear English error messages).",
+      "text": "Add React Query mutation hooks for updating notices and events, and ensure query invalidation correctly refreshes all notices and both upcoming/past event lists after create/update/delete operations.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-6"
+          "msg-1"
         ],
         "quotes": [
-          "I want to upload image and notices and events"
+          "Give me a way to update notices/events."
         ]
       },
       "acceptanceCriteria": [
-        "In the Admin Dashboard > Gallery tab, the add-gallery-item form includes a file input (accepting common image types like PNG/JPG/WebP).",
-        "When an admin selects an image file, the UI converts it to a Data URL and uses it as the `imageUrl` when calling addGalleryItem, without requiring the admin to manually paste a URL.",
-        "If the selected file is not an image or exceeds a reasonable size limit, the UI blocks submission and shows an English error message explaining why.",
-        "After adding a gallery item with an uploaded image, the Gallery page displays the new item and renders the uploaded image correctly using the stored Data URL."
+        "`useQueries.ts` includes `useUpdateNotice` and `useUpdateEvent` hooks that call the new backend update APIs and normalize backend errors using the existing `normalizeBackendError` helper",
+        "After a notice is created/updated/deleted, the notices list shown in the UI refreshes without a full page reload",
+        "After an event is created/updated/deleted, both Upcoming and Past event lists refresh correctly (i.e., invalidation targets the actual query keys used for `useUpcomingEvents` and `usePastEvents`)"
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "text": "Provide an in-app UI to edit existing notices and events from the admin experience. Add an Edit action for each notice/event row that opens a dialog pre-filled with the current values, allows changes, and saves via the update mutations with clear success/error toasts.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Give me a way to update notices/events."
+        ]
+      },
+      "acceptanceCriteria": [
+        "In Admin page notice management, each existing notice row has an Edit control that opens a dialog with fields pre-populated from the selected notice",
+        "Saving an edited notice updates the backend, closes the dialog, shows a success toast, and the notices table reflects the updated values",
+        "In Admin page event management, each existing event row has an Edit control that opens a dialog with fields pre-populated from the selected event (including isPast)",
+        "Saving an edited event updates the backend, closes the dialog, shows a success toast, and the events table reflects the updated values; if isPast changes, the event appears in the correct list (Upcoming vs Past) after refresh",
+        "User-facing text for edit/update flows is in English"
       ]
     }
   ],
   "constraints": [
-    "Backend must remain a single Motoko actor in `backend/main.mo` (no additional backend services).",
-    "Do not edit any frontend files under `frontend/src/components/ui` or any paths listed in `frontend.immutablePaths` in SYSTEM_CONTEXT.",
-    "Use English for all user-facing text."
+    "Do not edit any files under `frontend/src/components/ui` (compose existing Shadcn components only).",
+    "Do not modify any files listed in `frontend.immutablePaths` in SYSTEM_CONTEXT.",
+    "Backend must remain a single Motoko actor in `backend/main.mo`; only add `backend/migration.mo` if a state migration is strictly required."
   ],
   "nonGoals": [
-    "Implementing external image hosting or third-party storage integrations.",
-    "Adding non-Internet-Identity authentication methods.",
-    "Building a separate public-facing content submission workflow for non-admin users."
+    "Add external databases or non-Internet-Identity authentication providers",
+    "Implement rich text editing or file uploads for notices/events",
+    "Add real-time updates (WebSockets/push notifications)"
   ],
   "imageRequirements": {
     "required": [],

@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useSubmitMembership } from '../../hooks/useQueries';
+import { useSubmitMembershipRegistration } from '../../hooks/useQueries';
 import { MembershipType } from '../../backend';
 import { CheckCircle2, Loader2 } from 'lucide-react';
 
@@ -22,7 +22,7 @@ interface MembershipFormData {
 export default function MembershipForm() {
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const { register, handleSubmit, formState: { errors }, reset, setValue } = useForm<MembershipFormData>();
-  const submitMembership = useSubmitMembership();
+  const submitMembership = useSubmitMembershipRegistration();
 
   const onSubmit = async (data: MembershipFormData) => {
     try {

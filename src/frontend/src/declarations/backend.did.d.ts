@@ -45,7 +45,7 @@ export type NoticeCategory = { 'civicIssues' : null } |
 export type PaymentType = { 'welfareFund' : null } |
   { 'maintenanceFee' : null };
 export type Time = bigint;
-export interface UserProfile { 'name' : string }
+export interface UserProfile { 'name' : string, 'email' : string }
 export type UserRole = { 'admin' : null } |
   { 'user' : null } |
   { 'guest' : null };
@@ -73,6 +73,7 @@ export interface _SERVICE {
   'getPastEvents' : ActorMethod<[], Array<Event>>,
   'getUpcomingEvents' : ActorMethod<[], Array<Event>>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
+  'initializeBootstrapToken' : ActorMethod<[string], undefined>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
   'submitContactForm' : ActorMethod<[string, string, string, string], bigint>,
@@ -81,6 +82,14 @@ export interface _SERVICE {
     bigint
   >,
   'submitPayment' : ActorMethod<[bigint, bigint, PaymentType, string], bigint>,
+  'updateEvent' : ActorMethod<
+    [bigint, EventType, string, string, string, boolean],
+    undefined
+  >,
+  'updateNotice' : ActorMethod<
+    [bigint, NoticeCategory, string, string, string],
+    undefined
+  >,
 }
 export declare const idlService: IDL.ServiceClass;
 export declare const idlInitArgs: IDL.Type[];
